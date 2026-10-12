@@ -1,4 +1,4 @@
-# 虎尾場 2D CAD 配置系統 V6.9.1
+# 虎尾場 2D CAD 配置系統 V6.9.2
 
 這個資料夾就是 **GitHub Pages 上傳版**。
 
@@ -23,7 +23,7 @@
 │  └─ icons/
 └─ docs/
    ├─ CLOUD_SETUP.md
-   └─ V6.9.1_FULL_QA.md
+   └─ V6.9.2_FULL_QA.md
 ```
 
 ## GitHub Pages
@@ -50,3 +50,7 @@
 1. 重新整理頁面。
 2. iPhone / iPad 可關閉已加入主畫面的 PWA 後重開。
 3. 必要時清除該網站資料，讓新版 Service Worker 重新快取。
+
+
+## V6.9.2
+修正產房 C 精準定位；棟舍選單移除浴室2；放大棟舍選單字體。

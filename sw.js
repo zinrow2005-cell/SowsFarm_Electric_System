@@ -1,4 +1,4 @@
-const CACHE='huwei-cad-v691-fullqa';
+const CACHE='huwei-cad-v692-buildingc';
 const ASSETS=[
   './',
   './index.html',

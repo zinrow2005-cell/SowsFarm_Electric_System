@@ -424,29 +424,46 @@ function cloneComponentAt(source,p){
 const BUILDING_FOCUS={
  farrowingA:{label:'產房A 42床',x:70,y:38,w:615,h:300},
  farrowingB:{label:'產房B 36床',x:68,y:194,w:575,h:330},
- farrowingC:{label:'產房C 36床',x:688,y:65,w:507,h:290},
+ farrowingC:{
+   label:'產房C 36床',
+   points:[[739,137],[1197,242],[1157,446],[700,338]]
+ },
  farrowingD:{label:'產房D 36床',x:686,y:303,w:466,h:322},
  boar:{label:'公豬舍',x:154,y:536,w:444,h:141},
  giltBreeding:{label:'新女豬育成區 / 配種區',x:82,y:662,w:1050,h:184},
  gestationUpper:{label:'妊娠舍（上棟）',x:82,y:833,w:1050,h:176},
- gestationLower:{label:'妊娠舍（下棟）',x:82,y:1045,w:1050,h:141},
- bath2:{label:'浴室2',x:64,y:401,w:96,h:91}
+ gestationLower:{label:'妊娠舍（下棟）',x:82,y:1045,w:1050,h:141}
 };
+function buildingFocusBounds(box){
+ if(Array.isArray(box?.points)&&box.points.length){
+   const xs=box.points.map(p=>Number(p[0])),ys=box.points.map(p=>Number(p[1]));
+   const x=Math.min(...xs),y=Math.min(...ys),x2=Math.max(...xs),y2=Math.max(...ys);
+   return{x,y,w:x2-x,h:y2-y};
+ }
+ return{x:Number(box.x||0),y:Number(box.y||0),w:Number(box.w||1),h:Number(box.h||1)};
+}
 function clearBuildingFocus(){const g=qs('focusGuideLayer');if(g)g.innerHTML=''}
 function showBuildingFocus(box){
  clearBuildingFocus();const g=qs('focusGuideLayer');if(!g)return;
- g.appendChild(mk('rect',{x:box.x,y:box.y,width:box.w,height:box.h,rx:6,class:'building-focus-box'}));
- setTimeout(clearBuildingFocus,1400);
+ if(Array.isArray(box?.points)&&box.points.length){
+   g.appendChild(mk('polygon',{
+     points:box.points.map(p=>p.join(',')).join(' '),
+     class:'building-focus-polygon'
+   }));
+ }else{
+   g.appendChild(mk('rect',{x:box.x,y:box.y,width:box.w,height:box.h,rx:6,class:'building-focus-box'}));
+ }
+ setTimeout(clearBuildingFocus,1600);
 }
 function zoomToBuilding(key){
  const box=BUILDING_FOCUS[key];if(!box){status.textContent='找不到棟舍定位資料';return}pushViewState();
- const rect=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal;
+ const focus=buildingFocusBounds(box),rect=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal;
  const clientW=Math.max(320,rect.width||canvasWrap.clientWidth||800),clientH=Math.max(320,rect.height||canvasWrap.clientHeight||700);
  const baseScale=Math.min(clientW/vb.width,clientH/vb.height);
  const padX=clientW<600?42:84,padY=clientH<700?92:76;
- const targetScale=Math.min(Math.max(80,clientW-padX*2)/box.w,Math.max(100,clientH-padY*2)/box.h);
+ const targetScale=Math.min(Math.max(80,clientW-padX*2)/focus.w,Math.max(100,clientH-padY*2)/focus.h);
  zoom=Math.max(.5,Math.min(5,targetScale/Math.max(.0001,baseScale)));
- const cx=box.x+box.w/2,cy=box.y+box.h/2;
+ const cx=focus.x+focus.w/2,cy=focus.y+focus.h/2;
  pan={x:vb.x+vb.width/2-zoom*cx,y:vb.y+vb.height/2-zoom*cy};
  tf();showBuildingFocus(box);
  status.textContent=`已精準定位：${box.label}｜${Math.round(zoom*100)}%`;
@@ -980,7 +997,7 @@ qs('valveResetSizeBtn').onclick=()=>setValveScale(0.8,true);
 qs('clearUserBtn').onclick=()=>{if(confirm('清除所有後續新增的水線、電線、設備與註記？')){document.querySelectorAll('[data-user="1"]').forEach(n=>n.remove());fill(null);autosave();refreshList()}};
 function serialize(){return [...document.querySelectorAll('[data-user="1"]')].map(el=>({parent:el.parentElement.id,svg:new XMLSerializer().serializeToString(el)}))}
 function dl(fn,content,type){const b=new Blob([content],{type});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=fn;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
-function exportData(){return{version:'6.9.1',zoom,pan,scaleFactor,customLibrary:getCustomLibrary(),elements:serialize()}}
+function exportData(){return{version:'6.9.2',zoom,pan,scaleFactor,customLibrary:getCustomLibrary(),elements:serialize()}}
 qs('saveBtn').onclick=()=>dl('pigfarm_cad_project_v18.json',JSON.stringify(exportData(),null,2),'application/json');qs('loadBtn').onclick=()=>qs('loadInput').click();qs('loadInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;loadData(JSON.parse(await f.text()));};
 
 function sanitizeObsoleteOverlayArtifacts(){
