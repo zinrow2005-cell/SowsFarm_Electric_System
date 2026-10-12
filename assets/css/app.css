@@ -1,0 +1,795 @@
+/*
+ * 虎尾場 2D CAD 配置系統 V6.7
+ * 主樣式表：Desktop / iPad / Mobile
+ * 本版僅整理程式結構，不改既有操作邏輯。
+ */
+
+:root{--bg:#1b2228;--panel:#242e37;--panel2:#303b46;--line:#86c5ff;--text:#eef6ff;--muted:#9eb0c0;--accent:#32a9ff;--grid:#2a3741;--water:#3fd0ff;--electric:#ffd95c;--green:#51df95;--orange:#ffb454;--purple:#be9cff;--red:#ff8388}
+*{box-sizing:border-box;font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif}
+body{margin:0;height:100vh;display:grid;grid-template-rows:58px 1fr;background:var(--bg);color:var(--text);overflow:hidden}
+header{display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:#151c22;border-bottom:1px solid #3a4854}
+header h1{font-size:18px;margin:0}.actions{display:flex;gap:7px;flex-wrap:wrap}
+button,input,textarea,select{background:var(--panel2);color:var(--text);border:1px solid #465665;border-radius:6px;padding:7px 9px;font-size:13px}
+button{cursor:pointer}button:hover{background:#3c4854}.layout{display:grid;grid-template-columns:270px 1fr 320px;min-height:0;height:100%}
+.layout>aside{grid-column:1}
+.layout>.canvas-wrap{grid-column:2;min-width:0;min-height:0;width:100%;height:100%}
+.layout>.right{grid-column:3}
+
+aside,.right{background:var(--panel);overflow:auto;padding:12px}.right{border-left:1px solid #3b4854}aside{border-right:1px solid #3b4854}
+.section{background:#202932;border:1px solid #3a4854;border-radius:9px;padding:10px;margin-bottom:12px}.section h3{font-size:14px;margin:0 0 9px}.tiny{font-size:12px;line-height:1.55;color:var(--muted)}
+.toolgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.tool.active{border-color:var(--accent);background:#173d5b;box-shadow:0 0 0 1px var(--accent) inset}
+.layer-row{display:flex;align-items:center;gap:7px;margin:6px 0;font-size:13px}.layer-row input{accent-color:var(--accent)}
+.canvas-wrap{position:relative;overflow:hidden;background:#1b2228}.canvas-toolbar,.zoom-pill{position:absolute;z-index:5;display:flex;gap:7px}.canvas-toolbar{left:12px;top:12px}.zoom-pill{right:12px;top:12px}.status{position:absolute;left:12px;bottom:12px;z-index:6;background:rgba(16,24,31,.92);border:1px solid #455665;padding:6px 10px;border-radius:7px;font-size:12px;color:var(--muted)}
+svg{width:100%;height:100%;background:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px),linear-gradient(#23303a 1px,transparent 1px),linear-gradient(90deg,#23303a 1px,transparent 1px);background-size:20px 20px,20px 20px,100px 100px,100px 100px;background-position:center center}
+.prop-row{display:grid;grid-template-columns:92px 1fr;gap:7px;align-items:center;margin-bottom:7px}.prop-row label{font-size:12px;color:var(--muted)}textarea{width:100%;min-height:60px;resize:vertical}
+.hotspot{fill:transparent;stroke:transparent;cursor:pointer;pointer-events:all}.hotspot:hover,.hotspot.selected{fill:transparent!important;stroke:transparent!important;filter:none!important}.selected:not(.hotspot){filter:drop-shadow(0 0 5px #42b7ff)}
+.water-item{stroke:var(--water);stroke-width:2.6;fill:none;vector-effect:non-scaling-stroke}.elec-item{stroke:var(--electric);stroke-width:2.6;fill:none;vector-effect:non-scaling-stroke}.anno-item{stroke:#f2f7ff;stroke-width:2;fill:none;vector-effect:non-scaling-stroke}.user-text{fill:#fff;font-size:18px;font-weight:700}.tree{font-size:12px;line-height:1.65;color:var(--muted)}.tree b{color:#fff}
+.libgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.libitem{border:1px solid #4a6072;border-radius:8px;padding:8px 6px;text-align:center;background:#26323c;cursor:grab;user-select:none;font-size:12px}.libitem:hover{border-color:#6abaff;background:#2d3b46}.libitem .ico{font-size:19px;display:block;margin-bottom:2px}.libitem.water{color:#72dcff}.libitem.ground{color:#79efac}.libitem.city{color:#ffc779}.libitem.valve{color:#d2baff}.libitem.mainp{color:#ff999d}.libitem.subp{color:#ffe27d}.libitem.eqp{color:#ffb6dd}.libitem.pad{color:#67e4ff}.libitem.fan{color:#ff9b82}.libitem.guide{color:#8fc7ff}.libitem.heat{border-color:#d9a62a;color:#ffe08a}.libitem.heat .ico{color:#ffd24a}.libitem.pump{color:#80edc0}
+.component{cursor:move}.component text{pointer-events:none;font-family:"Microsoft JhengHei",sans-serif;font-weight:700}.component .box{stroke-width:2;vector-effect:non-scaling-stroke}.component.selected .box{stroke-width:3}.component.hide-label .component-label,.component.hide-label .switch-label{display:none}
+.valve-config{display:none;border:1px solid #735f98;background:#241f34;border-radius:9px;padding:10px;margin:8px 0 12px}
+.valve-config.show{display:block}
+.valve-config h3{color:#dfcfff;margin:0 0 8px;font-size:14px}
+.valve-source-row{display:grid;grid-template-columns:58px 1fr;gap:7px;align-items:center;margin-bottom:7px}
+.valve-source-row b{font-size:12px;color:#cdb8ff}
+.valve-status{padding:8px;border-radius:7px;background:#171b24;border:1px solid #554773;font-size:12px;line-height:1.55;margin-top:7px}
+.valve-preset{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.valve-preset button{font-size:11px;padding:5px 7px}.objlist{max-height:180px;overflow:auto;border:1px solid #3e4d59;border-radius:7px}.objrow{padding:6px 8px;border-bottom:1px solid #33414c;font-size:12px;cursor:pointer}.objrow:hover{background:#2c3944}.objrow:last-child{border-bottom:0}.badge{display:inline-block;border:1px solid #456173;border-radius:999px;padding:2px 6px;font-size:10px;margin-left:4px;color:#b9c9d7}
+.notice{background:#173a54;border-left:4px solid var(--accent);padding:8px;border-radius:6px;font-size:12px;line-height:1.55;color:#d9ecff}
+.route-node{fill:#fff;stroke:#29b8ff;stroke-width:2;vector-effect:non-scaling-stroke;cursor:pointer}.route-node.endpoint{fill:#ffd45a;stroke:#fff}.route-preview{stroke-dasharray:7 6;opacity:.8}.snap-ring{fill:none;stroke:#7be6ff;stroke-width:2;stroke-dasharray:4 3;vector-effect:non-scaling-stroke;pointer-events:none}.port{fill:#101820;stroke:#8de7ff;stroke-width:2;vector-effect:non-scaling-stroke;pointer-events:none}.threeway-active{stroke-width:5!important;filter:drop-shadow(0 0 4px currentColor)}
+
+.statsgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.statbox{background:#26323c;border:1px solid #405260;border-radius:8px;padding:8px;text-align:center}.statbox strong{display:block;font-size:16px;color:#fff}.statbox span{font-size:10px;color:var(--muted)}
+.power-tree{font-size:12px;line-height:1.55;max-height:230px;overflow:auto;border:1px solid #3e4d59;border-radius:7px;padding:7px;background:#1b242c}.power-node{padding:4px 5px;border-radius:5px;cursor:pointer}.power-node:hover{background:#2a3945}.power-root{color:#ff9fa4}.power-child{color:#ffe27d}.power-load{color:#dcecff}.power-path{background:#182730;border:1px solid #365264;border-radius:7px;padding:7px;font-size:12px;line-height:1.55;color:#d9ecff;min-height:42px}.cal-dot{fill:#fff;stroke:#ffce5a;stroke-width:2.5;vector-effect:non-scaling-stroke}.measure-line{stroke:#ffce5a;stroke-width:2;stroke-dasharray:6 5;fill:none;vector-effect:non-scaling-stroke}.measure-label{fill:#ffdf82;font-size:16px;font-weight:700}.readonly{opacity:.88}
+
+
+/* V1.8 配電箱內部迴路編輯器 */
+.panel-editor-btn{width:100%;margin-top:8px;background:#5a3f12;border-color:#b88325;color:#ffe7a4;font-weight:700}.panel-editor-btn:hover{background:#704f17}
+.modal-backdrop{position:fixed;inset:0;background:rgba(5,10,15,.78);display:none;align-items:center;justify-content:center;z-index:1000;padding:18px}.modal-backdrop.show{display:flex}
+.modal-card{width:min(1480px,98vw);height:min(900px,95vh);background:#1b242c;border:1px solid #526574;border-radius:12px;box-shadow:0 24px 70px rgba(0,0,0,.55);display:grid;grid-template-rows:58px auto minmax(0,1fr) 54px;overflow:hidden}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#151d24;border-bottom:1px solid #3d4d59}.modal-head h2{font-size:17px;margin:0}.modal-head .mh-actions{display:flex;gap:7px}
+.modal-body{display:grid;grid-template-columns:minmax(720px,1.45fr) minmax(350px,.75fr);min-height:0}.panel-form{overflow:auto;padding:12px;border-right:1px solid #3d4d59}.panel-preview{overflow:auto;padding:12px;background:#182128}
+.modal-foot{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:#151d24;border-top:1px solid #3d4d59}.modal-foot .summary{font-size:12px;color:#b9cad7}
+.panel-meta-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:8px;margin-bottom:10px}.panel-meta-grid .box{background:#222e37;border:1px solid #3b4d5b;border-radius:7px;padding:7px}.panel-meta-grid label{display:block;font-size:11px;color:#9fb0bf;margin-bottom:4px}.panel-meta-grid input,.panel-meta-grid select{width:100%}
+.circuit-tools{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0}.circuit-table-wrap{overflow:auto;border:1px solid #3c4e5c;border-radius:8px;max-height:510px}.circuit-table{border-collapse:collapse;width:100%;min-width:2050px;font-size:11px}.circuit-table th{position:sticky;top:0;background:#24445c;color:#eaf7ff;z-index:2;padding:7px 5px;border:1px solid #42596a;white-space:nowrap}.circuit-table td{padding:4px;border:1px solid #354956;vertical-align:middle}.circuit-table tr:nth-child(even){background:#202c35}.circuit-table input,.circuit-table select{width:100%;min-width:64px;padding:5px 6px;font-size:11px}.circuit-table .w-id{min-width:60px}.circuit-table .w-load{min-width:160px}.circuit-table .w-note{min-width:150px}.del-circuit{padding:5px 8px;background:#563036;border-color:#8e4a52;color:#ffced2}
+.circuit-table .w-group{min-width:120px}.circuit-table .w-control{min-width:145px}.circuit-table .w-temp{min-width:90px}.circuit-table .w-contact{min-width:125px}.ctrl-badge{display:inline-block;margin-top:5px;padding:2px 6px;border-radius:999px;background:#254054;border:1px solid #49687c;color:#d8efff;font-size:10px}.heat-control-note{margin:8px 0;padding:8px 10px;border:1px solid #6b592b;border-radius:8px;background:#302b1d;color:#ffe8a6;font-size:11px;line-height:1.55}
+.panel-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}.panel-kpi{background:#21303a;border:1px solid #405565;border-radius:8px;padding:8px;text-align:center}.panel-kpi strong{display:block;font-size:16px;color:#fff}.panel-kpi span{font-size:10px;color:#9fb0bf}
+.sld-title{font-size:13px;font-weight:700;margin:7px 0;color:#dcecff}.sld{background:#10181e;border:1px solid #40515d;border-radius:8px;padding:12px;min-height:530px}.sld-source{border:2px solid #ffcf5a;background:#4c3d14;color:#fff;border-radius:7px;padding:8px;text-align:center;font-weight:700;margin:0 auto 12px;max-width:260px}.sld-main{border:2px solid #ff8d93;background:#4d252a;color:#fff;border-radius:7px;padding:8px;text-align:center;font-weight:700;margin:0 auto 16px;max-width:300px;position:relative}.sld-main:before{content:'';position:absolute;height:14px;border-left:2px solid #8ab9d9;top:-16px;left:50%}.branch-bus{border-top:3px solid #8ab9d9;padding-top:16px;display:grid;grid-template-columns:repeat(2,minmax(150px,1fr));gap:10px}.branch-card{position:relative;border:1px solid #4d6272;background:#202d36;border-radius:7px;padding:8px;min-height:90px}.branch-card:before{content:'';position:absolute;height:16px;border-left:2px solid #8ab9d9;top:-17px;left:50%}.branch-card .bc-id{color:#ffe17a;font-weight:700}.branch-card .bc-load{color:#fff;font-weight:700;margin-top:3px}.branch-card .bc-sub{font-size:10px;color:#9fb0bf;line-height:1.45;margin-top:4px}.branch-card .ab{display:inline-block;border:1px solid #4a735e;color:#9df1bd;padding:1px 5px;border-radius:999px;font-size:9px;margin-top:4px}.branch-card .noab{display:inline-block;border:1px solid #6b5960;color:#cdbfc4;padding:1px 5px;border-radius:999px;font-size:9px;margin-top:4px}
+@media(max-width:1100px){.modal-body{grid-template-columns:1fr}.panel-preview{display:none}.panel-meta-grid{grid-template-columns:repeat(2,1fr)}}
+
+
+/* V2.2 通風分段控制 */
+.circuit-table{min-width:2780px}.circuit-table .w-stage{min-width:82px}.circuit-table .w-delay{min-width:82px}.circuit-table .w-interlock{min-width:170px}.vent-stage-note{margin:8px 0;padding:8px 10px;border:1px solid #355f73;border-radius:8px;background:#172e3b;color:#cfeeff;font-size:11px;line-height:1.55}.stage-badge{display:inline-block;margin-top:5px;padding:2px 6px;border-radius:999px;background:#173d31;border:1px solid #3f7d64;color:#a8efc5;font-size:10px}.vent-sequence{display:grid;gap:7px;margin:8px 0 14px}.vent-step{background:#182b34;border:1px solid #3f5967;border-left:4px solid #52c7ff;border-radius:7px;padding:7px 8px;font-size:11px;line-height:1.5}.vent-step b{color:#fff}.vent-step .muted{color:#9fb0bf}.panel-kpis{grid-template-columns:repeat(4,1fr)}
+
+/* V2.8 配電箱照片標註 */
+.panel-photo-section{margin:10px 0 12px;border:1px solid #425765;border-radius:9px;background:#172129;padding:10px}
+.panel-photo-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.panel-photo-head h3{margin:0 0 4px;font-size:14px;color:#eaf6ff}
+.panel-photo-actions{display:flex;gap:6px;flex-wrap:wrap}
+.panel-photo-stage{position:relative;min-height:180px;max-height:560px;overflow:auto;background:#0e1419;border:1px solid #425361;border-radius:8px}
+.panel-photo-stage img{display:block;width:100%;height:auto;user-select:none;pointer-events:none}
+.panel-photo-overlay{position:absolute;inset:0;cursor:crosshair}
+.panel-photo-placeholder{padding:55px 20px;text-align:center;color:#8194a5;font-size:12px}
+.photo-mark{position:absolute;border:2px solid #ffd45c;background:rgba(255,212,92,.08);cursor:pointer;min-width:12px;min-height:12px}
+.photo-mark.selected{border-color:#72dcff;background:rgba(71,193,255,.14);box-shadow:0 0 0 2px rgba(114,220,255,.2)}
+.photo-mark-label{position:absolute;left:0;top:0;transform:translateY(-100%);background:#111b23;border:1px solid #607583;color:#fff;padding:2px 5px;border-radius:4px 4px 0 0;font-size:10px;white-space:nowrap;max-width:250px;overflow:hidden;text-overflow:ellipsis}
+.photo-temp-mark{position:absolute;border:2px dashed #72dcff;background:rgba(114,220,255,.08);pointer-events:none}
+.photo-editor-grid{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:7px;margin-top:9px}
+.photo-editor-grid .box{background:#202b33;border:1px solid #3d505e;border-radius:7px;padding:6px}
+.photo-editor-grid label{display:block;color:#9fb0bf;font-size:10px;margin-bottom:4px}
+.photo-editor-grid input,.photo-editor-grid select{width:100%;font-size:11px;padding:5px}
+.photo-mark-summary{margin-top:8px;font-size:11px;color:#b9cad7;line-height:1.5}
+@media(max-width:1100px){.photo-editor-grid{grid-template-columns:repeat(2,minmax(120px,1fr))}}
+
+
+/* V2.9 簡潔介面 */
+header h1{white-space:nowrap}
+.ui-mode-btn{border-color:#3f8bc0;background:#173d5b;font-weight:700}
+.header-more-btn{border-color:#526877}
+body.simple-ui header .actions .export-extra{display:none}
+body.simple-ui.show-export-menu header .actions .export-extra{display:inline-flex}
+.sidebar-tabs,.right-tabs{position:sticky;top:-12px;z-index:20;display:flex;gap:5px;padding:7px 0 9px;background:linear-gradient(var(--panel) 78%,transparent);margin-bottom:4px}
+.sidebar-tabs button,.right-tabs button{flex:1;padding:7px 5px;font-size:12px}
+.sidebar-tabs button.active,.right-tabs button.active{background:#173d5b;border-color:#32a9ff;color:#fff}
+body.simple-ui aside .section[data-ui-group]{display:none}
+body.simple-ui aside[data-active-group="common"] .section[data-ui-group="common"],
+body.simple-ui aside[data-active-group="library"] .section[data-ui-group="library"],
+body.simple-ui aside[data-active-group="view"] .section[data-ui-group="view"]{display:block}
+body.simple-ui .advanced-only{display:none!important}
+body.simple-ui .right .secondary-info{display:none}
+body.simple-ui .right[data-right-tab="info"] .primary-properties{display:none}
+body.simple-ui .right[data-right-tab="info"] .secondary-info{display:block}
+body.simple-ui .right[data-right-tab="basic"] .primary-properties{display:block}
+.compact-hint{font-size:11px;color:#9eb0c0;padding:6px 8px;border:1px dashed #405260;border-radius:7px;background:#19232b;margin-bottom:8px}
+.canvas-quick-tools{display:flex;gap:5px}
+.canvas-quick-tools button{padding:6px 8px;font-size:12px}
+body.left-collapsed .layout{grid-template-columns:0 1fr 320px}
+body.left-collapsed aside{display:none}
+body.right-collapsed .layout{grid-template-columns:270px 1fr 0}
+body.right-collapsed .right{display:none}
+body.left-collapsed.right-collapsed .layout{grid-template-columns:0 1fr 0}
+body.left-collapsed .layout>.canvas-wrap,
+body.right-collapsed .layout>.canvas-wrap,
+body.left-collapsed.right-collapsed .layout>.canvas-wrap{grid-column:2;width:100%;min-width:0}
+
+body.simple-ui .layout{grid-template-columns:245px 1fr 300px}
+body.simple-ui.left-collapsed .layout{grid-template-columns:0 1fr 300px}
+body.simple-ui.right-collapsed .layout{grid-template-columns:245px 1fr 0}
+body.simple-ui.left-collapsed.right-collapsed .layout{grid-template-columns:0 1fr 0}
+body.simple-ui.left-collapsed.right-collapsed .layout>.canvas-wrap{grid-column:2;width:100%;min-width:0}
+
+body.simple-ui aside,body.simple-ui .right{padding:9px}
+body.simple-ui .section{padding:9px;margin-bottom:8px}
+body.simple-ui .section h3{font-size:13px;margin-bottom:7px}
+body.simple-ui .notice{font-size:11px;padding:7px}
+body.simple-ui .prop-row{grid-template-columns:80px 1fr;margin-bottom:6px}
+body.simple-ui .libgrid{gap:5px}
+body.simple-ui .libitem{padding:7px 5px}
+body.simple-ui .toolgrid{gap:5px}
+body.simple-ui .toolgrid button{padding:7px 5px;font-size:12px}
+@media(max-width:1000px){
+  body.simple-ui .layout{grid-template-columns:220px 1fr 270px}
+  header h1{font-size:15px}
+}
+
+
+/* V3.1 配電箱編輯器分頁 */
+.panel-editor-tabs{display:flex;align-items:center;align-content:center;gap:6px;flex-wrap:wrap;padding:8px 12px;background:#182128;border-bottom:1px solid #3d4d59;position:relative;top:auto;z-index:4;min-height:46px;max-height:86px;overflow:auto}
+.panel-editor-tabs button{flex:0 0 auto;height:32px;min-height:32px;padding:6px 12px;font-size:12px;line-height:18px;border-radius:999px;white-space:nowrap}
+.panel-editor-tabs button.active{background:#1a4d70;border-color:#4cbcff;color:#fff}
+.panel-editor-tabs .tab-badge{display:inline-block;margin-left:4px;min-width:18px;padding:1px 5px;border-radius:999px;background:#0e293b;color:#aee3ff;font-size:9px;text-align:center}
+.modal-body.panel-tabbed{display:block;overflow:hidden;min-height:0;height:100%}
+.modal-body.panel-tabbed .panel-form{border-right:0;overflow:auto;min-height:0;height:100%;max-height:none}
+.modal-body.panel-tabbed .panel-preview{overflow:auto;min-height:0;height:100%;max-height:none;padding:12px}
+.modal-card[data-panel-tab="meta"] [data-panel-view]:not([data-panel-view="meta"]),
+.modal-card[data-panel-tab="photo"] [data-panel-view]:not([data-panel-view="photo"]),
+.modal-card[data-panel-tab="circuits"] [data-panel-view]:not([data-panel-view="circuits"]),
+.modal-card[data-panel-tab="preview"] [data-panel-view]:not([data-panel-view="preview"]){display:none!important}
+.panel-tab-help{padding:7px 10px;border:1px solid #385266;border-radius:7px;background:#172735;color:#cce8f8;font-size:11px;line-height:1.5;margin-bottom:9px}
+.panel-form[data-panel-view="preview"]{display:none!important}
+.panel-preview[data-panel-view="preview"]{display:block}
+.modal-card:not([data-panel-tab="preview"]) .panel-preview{display:none!important}
+.modal-card[data-panel-tab="preview"] .panel-form{display:none!important}
+.modal-card[data-panel-tab="preview"] .panel-preview{display:block!important}
+.panel-meta-grid{margin-top:2px}
+@media(max-width:1100px){
+  .panel-editor-tabs{position:relative;max-height:92px}
+  .panel-editor-tabs button{height:30px;min-height:30px;padding:5px 9px}
+}
+
+
+/* V3.2 緊急供電 / ATS */
+.libitem.utility{color:#80d7ff;border-color:#3c7896}
+.libitem.generator{color:#ffd56b;border-color:#8e7230}
+.libitem.ats{color:#b8ffaf;border-color:#4e8450}
+.source-config{display:none;border:1px solid #4a6270;background:#192630;border-radius:8px;padding:8px;margin:8px 0}
+.source-config.show{display:block}
+.source-config h3{margin:0 0 7px;font-size:13px;color:#dff4ff}
+.emergency-sim{border:1px solid #465a68;background:#172129;border-radius:8px;padding:9px}
+.emergency-sim .sim-row{display:grid;grid-template-columns:92px 1fr;gap:7px;align-items:center;margin:6px 0}
+.emergency-sim .sim-row label{font-size:11px;color:#a9bac7}
+.emergency-sim .sim-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.emergency-sim .stage-picks{display:flex;gap:10px;flex-wrap:wrap;font-size:12px}
+.emergency-sim .stage-picks label{display:flex;gap:4px;align-items:center}
+.sim-result{margin-top:8px;padding:8px;border-radius:7px;background:#101820;border:1px solid #3b4d59;font-size:11px;line-height:1.55}
+.sim-result.ok{border-color:#3c7a58;color:#b9f3ce}
+.sim-result.warn{border-color:#a56b36;color:#ffd6a6}
+.sim-result.danger{border-color:#9a4a50;color:#ffc1c5}
+.component.power-off{opacity:.18;filter:grayscale(1)}
+.component.power-on{opacity:1;filter:none}
+#elecLayer polyline.power-off{opacity:.12;stroke:#5f6870!important}
+#elecLayer polyline.power-on{opacity:1}
+.outage-pill{display:inline-block;padding:2px 6px;border-radius:999px;background:#5b2d32;border:1px solid #a1525b;color:#ffd8dc;font-size:10px;margin-left:5px}
+
+
+/* V3.7 穩定版：配電箱照片 + 標記工具 */
+.panel-photo-section{position:relative}
+.photo-marker-toolbar{
+  position:sticky;top:0;z-index:30;display:flex;gap:7px;flex-wrap:wrap;align-items:center;
+  margin:8px 0;padding:9px;background:#102531;border:1px solid #447189;border-radius:9px;
+  box-shadow:0 3px 12px rgba(0,0,0,.2)
+}
+.photo-marker-toolbar button{padding:8px 11px;font-size:12px;font-weight:700;border-radius:8px}
+.photo-marker-toolbar button.primary{background:#0b7caf;border-color:#68d4ff;color:#fff}
+.photo-marker-toolbar button.active{background:#704c13;border-color:#ffd15d;color:#fff}
+.photo-marker-toolbar .hint{flex:1;min-width:220px;color:#c0dbe9;font-size:11px;line-height:1.45}
+.photo-tool-status{margin:0 0 8px;padding:7px 9px;border-radius:7px;background:#172832;border:1px solid #3d5868;color:#d8edf7;font-size:11px}
+.photo-autosave-note{margin-top:6px;color:#83c6e8;font-size:10px}
+.photo-mark{touch-action:none;border-radius:7px}
+.photo-mark-icon{
+  position:absolute;left:-10px;top:-12px;min-width:22px;height:22px;padding:0 5px;border-radius:999px;
+  display:flex;align-items:center;justify-content:center;background:#ffd45c;color:#16202a;border:1px solid #ffe6a0;
+  font-size:10px;font-weight:800;z-index:3
+}
+.photo-mark.selected .photo-mark-icon{background:#72dcff;border-color:#c3f1ff}
+.photo-resize-handle{
+  position:absolute;right:-7px;bottom:-7px;width:14px;height:14px;border-radius:50%;
+  background:#72dcff;border:2px solid #0e1c25;cursor:nwse-resize;z-index:4
+}
+.photo-mark-power{
+  position:absolute;right:2px;bottom:2px;padding:1px 5px;border-radius:999px;
+  background:rgba(13,22,29,.9);border:1px solid #45697d;color:#c6ecff;font-size:9px;white-space:nowrap
+}
+.photo-detail-card{padding:10px;border-radius:9px;background:#16242d;border:1px solid #3e5968}
+.photo-detail-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:7px}
+.photo-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:7px}
+.photo-detail-grid>div{padding:7px;border:1px solid #324a58;border-radius:7px;background:#111b22}
+.photo-detail-grid b{display:block;font-size:10px;color:#8eb8cd;margin-bottom:3px}
+.photo-detail-grid span{font-size:11px;color:#fff;line-height:1.45}
+@media(max-width:900px){.photo-detail-grid{grid-template-columns:1fr}}
+
+
+/* V4.0：電路標記主要作用與內嵌詳細視窗（核心版） */
+.panel-photo-overlay{overflow:visible !important}
+.photo-mark{overflow:visible !important;z-index:2}
+.photo-mark.selected{z-index:12}
+.photo-mark-icon{z-index:5}
+.photo-mark-main{
+  position:absolute;left:26px;top:-11px;z-index:5;
+  max-width:190px;min-width:72px;padding:4px 8px;border-radius:9px;
+  background:rgba(12,22,29,.95);border:1px solid #ffd45c;color:#fff;
+  box-shadow:0 3px 10px rgba(0,0,0,.28);pointer-events:none
+}
+.photo-mark.selected .photo-mark-main{border-color:#72dcff}
+.photo-mark-main .pm-code{
+  display:block;color:#9dc4d8;font-size:9px;line-height:1.1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.photo-mark-main .pm-role{
+  display:block;margin-top:2px;color:#fff;font-size:11px;line-height:1.2;font-weight:800;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.photo-mark-main.flip{left:auto;right:26px}
+.photo-mark .photo-mark-label{display:none !important}
+
+.photo-inline-popup{
+  position:absolute;z-index:60;width:300px;max-width:min(300px,72vw);
+  padding:11px;border-radius:12px;background:rgba(10,19,25,.985);
+  border:1px solid #65ceff;box-shadow:0 14px 32px rgba(0,0,0,.42);color:#e9f7ff
+}
+.photo-inline-popup .pip-head{
+  display:flex;gap:8px;align-items:center;padding-bottom:8px;margin-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.09)
+}
+.photo-inline-popup .pip-icon{
+  min-width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+  background:#72dcff;color:#10202a;font-weight:900;font-size:10px
+}
+.photo-inline-popup .pip-title{min-width:0;flex:1}
+.photo-inline-popup .pip-title strong{
+  display:block;color:#fff;font-size:13px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.photo-inline-popup .pip-title span{display:block;color:#9fc4d8;font-size:10px;margin-top:2px}
+.photo-inline-popup .pip-close{
+  min-width:28px;height:28px;padding:0;border-radius:7px;background:#472329;border:1px solid #86444c;color:#ffd9dc
+}
+.photo-inline-grid{
+  display:grid;grid-template-columns:90px 1fr;gap:6px 8px;font-size:10px;line-height:1.4
+}
+.photo-inline-grid b{color:#8fc7e3}
+.photo-inline-grid span{color:#f5fbff;word-break:break-word}
+.photo-inline-note{
+  margin-top:9px;padding-top:8px;border-top:1px dashed rgba(122,197,232,.3);
+  color:#d8ecf6;font-size:10px;line-height:1.45
+}
+.photo-save-state{
+  display:inline-flex;align-items:center;gap:5px;margin-left:6px;padding:2px 6px;border-radius:999px;
+  background:#17382c;border:1px solid #347359;color:#aee7c7;font-size:9px
+}
+@media(max-width:900px){
+  .photo-mark-main{max-width:130px}
+  .photo-inline-popup{width:260px}
+}
+
+
+/* V4.1 主圖所有設備標示：主要功能 + 詳細視窗 */
+.component-role-label{
+  pointer-events:none;
+  fill:#eaf7ff;
+  font-weight:700;
+  paint-order:stroke fill;
+  stroke:#101820;
+  stroke-width:3px;
+  stroke-linejoin:round;
+}
+.component.hide-label .component-role-label{display:none}
+.object-detail-popover{
+  position:absolute;z-index:80;width:310px;max-width:min(310px,72vw);
+  display:none;padding:11px;border-radius:12px;
+  background:rgba(12,21,28,.98);border:1px solid #5bc7ff;
+  box-shadow:0 16px 38px rgba(0,0,0,.42);color:#eaf7ff
+}
+.object-detail-popover.show{display:block}
+.object-detail-head{
+  display:flex;align-items:center;gap:9px;padding-bottom:8px;margin-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.09)
+}
+.object-detail-icon{
+  min-width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  background:#173f57;border:1px solid #4bbcf7;color:#fff;font-size:12px;font-weight:800
+}
+.object-detail-title{min-width:0;flex:1}
+.object-detail-title strong{
+  display:block;font-size:13px;color:#fff;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.object-detail-title span{
+  display:block;margin-top:2px;font-size:10px;color:#9dc5d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.object-detail-close{
+  min-width:28px;height:28px;padding:0;border-radius:7px;background:#4a2429;border:1px solid #89474e;color:#ffd8da
+}
+.object-main-function{
+  margin-bottom:9px;padding:8px 9px;border-radius:8px;
+  background:#173549;border:1px solid #35647f
+}
+.object-main-function b{display:block;font-size:9px;color:#8ecdf0;margin-bottom:3px}
+.object-main-function span{display:block;font-size:13px;color:#fff;font-weight:800;line-height:1.35}
+.object-detail-grid{
+  display:grid;grid-template-columns:92px minmax(0,1fr);gap:6px 8px;font-size:10px;line-height:1.4
+}
+.object-detail-grid b{color:#8fc5e1}
+.object-detail-grid span{color:#f3fbff;word-break:break-word}
+.object-detail-note{
+  margin-top:9px;padding-top:8px;border-top:1px dashed rgba(133,204,236,.28);
+  font-size:10px;line-height:1.45;color:#d4ebf6
+}
+.object-detail-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.object-detail-actions button{font-size:10px;padding:5px 7px}
+.object-detail-tip{
+  margin:7px 0 0;color:#8fb5c8;font-size:9px;line-height:1.35
+}
+
+
+/* V4.2 精簡操作 */
+body.simple-ui .compact-hint,
+body.simple-ui .section .tiny,
+body.simple-ui .object-detail-tip{display:none!important}
+
+body.simple-ui .toolgrid .tool[data-tool="pan"]{display:none!important}
+body.simple-ui #deviceMoreBtn{display:inline-flex}
+body:not(.simple-ui) #deviceMoreBtn{display:none}
+
+body.simple-ui .smart-hide{display:none!important}
+body.simple-ui.device-more-open .smart-hide.smart-more{display:grid!important}
+body.simple-ui.device-more-open .smart-hide.smart-more.prop-actions{display:flex!important}
+body.simple-ui.device-more-open .smart-hide.smart-more.section{display:block!important}
+body.simple-ui.device-more-open .smart-hide.smart-more#sourceConfig,
+body.simple-ui.device-more-open .smart-hide.smart-more#valveConfig{display:block!important}
+
+body.simple-ui .right[data-right-tab="info"] .secondary-info{display:none!important}
+body.simple-ui .right[data-right-tab="info"] .secondary-info.simple-info-keep{display:block!important}
+
+body.simple-ui .primary-properties .notice{font-size:10px;line-height:1.35}
+body.simple-ui .primary-properties .prop-row{margin-bottom:5px}
+body.simple-ui .primary-properties #applyBtn{width:100%;margin-top:4px;background:#174c6b;border-color:#479bd0;font-weight:700}
+body.simple-ui .primary-properties #deviceMoreBtn{width:100%;margin-top:6px}
+
+body.simple-ui .canvas-toolbar>.advanced-only,
+body.simple-ui .canvas-toolbar #resetBtn,
+body.simple-ui .canvas-toolbar #modeBtn{display:none!important}
+
+/* 主圖詳細視窗：先看重點 */
+body.simple-ui .object-detail-popover{width:285px;padding:10px}
+body.simple-ui .object-detail-note{display:none!important}
+body.simple-ui .object-detail-grid{grid-template-columns:82px minmax(0,1fr)}
+.object-detail-actions .detail-more-btn{margin-left:auto}
+
+/* 配電箱照片標記：精簡欄位 */
+.photo-editor-grid .photo-extra-field{display:none}
+.panel-photo-section.photo-more-open .photo-editor-grid .photo-extra-field{display:block}
+.panel-photo-section.photo-more-open .photo-editor-grid .photo-extra-field.full{grid-column:1/-1}
+body.simple-ui #photoToolBoxBtn,
+body.simple-ui #photoToolDoneBtn{display:none!important}
+body.simple-ui #photoLoadFromCircuitBtn,
+body.simple-ui #photoSyncCircuitBtn,
+body.simple-ui #photoSaveMarkBtn{display:none!important}
+body.simple-ui .photo-marker-toolbar .hint{display:none!important}
+body.simple-ui .photo-marker-toolbar{padding:7px;gap:5px}
+body.simple-ui .photo-marker-toolbar button{padding:7px 9px}
+body.simple-ui .photo-tool-status{font-size:10px}
+
+/* 配電箱迴路頁先保留核心操作 */
+body.simple-ui #panelAddHeatBtn,
+body.simple-ui #panelAddHeatGroupBtn,
+body.simple-ui #panelClearCircuitsBtn{display:none!important}
+body.simple-ui .panel-tab-help{font-size:10px;line-height:1.4;padding:7px}
+body.simple-ui .panel-kpi:nth-child(n+4){display:none}
+body.simple-ui .panel-editor-tabs{padding:6px 10px;min-height:42px}
+body.simple-ui .panel-editor-tabs button{height:30px;min-height:30px;padding:5px 10px}
+
+
+/* V4.4：防止舊版儲存資料把已刪除的虛線重新載入 */
+#viewport [data-user="1"].route-preview,
+#viewport [data-user="1"].measure-line,
+#viewport [data-user="1"].measure-label,
+#viewport [data-user="1"][stroke-dasharray]{
+  display:none !important;
+}
+
+
+/* V4.6 操作修正 */
+body.simple-ui .toolgrid .tool[data-tool="pan"]{display:inline-flex!important}
+aside{min-width:0;overflow-x:hidden}
+aside .prop-row{grid-template-columns:minmax(0,72px) minmax(0,1fr)}
+aside .prop-row input,
+aside .prop-row select,
+aside .prop-row textarea{min-width:0;width:100%;max-width:100%;box-sizing:border-box}
+aside .section{min-width:0;overflow:hidden}
+#buildingFilter{min-width:0;width:100%;max-width:100%}
+
+
+/* V4.7 操作與版面細修 */
+.tool[data-tool="pan"],
+#quickPanBtn{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  line-height:1.2;
+}
+body.ctrl-pan-ready #svg,
+body.space-pan-ready #svg,
+body.pan-tool-ready #svg{cursor:grab}
+body.ctrl-pan-ready #svg:active,
+body.space-pan-ready #svg:active,
+body.pan-tool-ready #svg:active{cursor:grabbing}
+
+aside .prop-row{
+  grid-template-columns:minmax(0,68px) minmax(0,1fr)!important;
+}
+aside .prop-row label{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+aside select,
+aside input{
+  min-width:0!important;
+  max-width:100%!important;
+  width:100%!important;
+}
+
+
+/* V4.8 常用設備快速放置 */
+.quick-device-bar{
+  position:absolute;left:12px;top:52px;z-index:21;
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+  max-width:calc(100% - 92px);padding:6px 8px;
+  background:rgba(20,31,39,.94);border:1px solid #3c5362;border-radius:9px;
+  box-shadow:0 4px 14px rgba(0,0,0,.22)
+}
+.quick-device-title{
+  font-size:10px;color:#9db5c5;margin-right:2px;white-space:nowrap
+}
+.quick-device-bar button{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:28px;padding:5px 8px;font-size:11px;line-height:1.1;
+  border-radius:7px;white-space:nowrap
+}
+.quick-device-bar button.active{
+  background:#15577c;border-color:#54c8ff;color:#fff;
+  box-shadow:0 0 0 2px rgba(84,200,255,.14)
+}
+.quick-device-cancel{display:none!important}
+body.component-place-mode .quick-device-cancel{
+  display:inline-flex!important;background:#4a292d;border-color:#8d4c54;color:#ffd4d7
+}
+body.component-place-mode #svg{cursor:crosshair}
+body.simple-ui .quick-device-bar{display:flex}
+@media(max-width:900px){
+  .quick-device-bar{left:8px;right:52px;max-width:none;top:50px;gap:4px}
+  .quick-device-title{display:none}
+  .quick-device-bar button{font-size:10px;padding:5px 6px}
+}
+
+
+/* V4.9 標示物件編輯 / 刪除 / 形狀比例 */
+.shape-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.shape-presets button{font-size:10px;padding:6px 4px}
+.object-detail-actions .danger-btn{background:#4a262b;border-color:#934e56;color:#ffd9dc}
+body.object-edit-focus .right{box-shadow:inset 3px 0 0 #4fc7ff}
+
+
+/* V5.0 圖面直接縮放 / 比例 / 旋轉控制點 */
+.selection-outline{
+  fill:none;stroke:#58d4ff;stroke-width:1.6;stroke-dasharray:6 4;
+  vector-effect:non-scaling-stroke;pointer-events:none
+}
+.selection-rotate-line{
+  stroke:#ffcf62;stroke-width:1.5;vector-effect:non-scaling-stroke;pointer-events:none
+}
+.transform-handle{
+  stroke:#10202a;stroke-width:1.5;vector-effect:non-scaling-stroke;cursor:pointer
+}
+.transform-handle.uniform{fill:#59d8ff;cursor:nwse-resize}
+.transform-handle.width{fill:#78e3a8;cursor:ew-resize}
+.transform-handle.height{fill:#78e3a8;cursor:ns-resize}
+.transform-handle.rotate{fill:#ffd05b;cursor:grab}
+.transform-handle.rotate:active{cursor:grabbing}
+.selection-handle-caption{
+  fill:#dff7ff;font-size:9px;font-weight:700;
+  paint-order:stroke fill;stroke:#10202a;stroke-width:2px;
+  pointer-events:none
+}
+body.component-transforming #svg{cursor:default}
+
+
+/* V5.1 刪除確認視窗 */
+.object-detail-popover,
+.object-detail-actions,
+.object-detail-actions button{
+  pointer-events:auto!important;
+}
+.delete-confirm-backdrop{
+  position:fixed;inset:0;z-index:3000;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(5,10,14,.72);padding:18px;
+}
+.delete-confirm-backdrop.show{display:flex}
+.delete-confirm-card{
+  width:min(420px,94vw);padding:16px;border-radius:12px;
+  background:#18232b;border:1px solid #5b6e7c;
+  box-shadow:0 24px 70px rgba(0,0,0,.55)
+}
+.delete-confirm-card h3{margin:0 0 8px;font-size:16px;color:#fff}
+.delete-confirm-card p{margin:0;color:#c8d9e4;font-size:12px;line-height:1.55}
+.delete-confirm-name{
+  margin:10px 0;padding:9px;border-radius:8px;
+  background:#101920;border:1px solid #3e5361;color:#fff;font-weight:700
+}
+.delete-confirm-actions{
+  display:flex;justify-content:flex-end;gap:8px;margin-top:14px
+}
+.delete-confirm-actions .danger{
+  background:#8a2f39;border-color:#d45d69;color:#fff;font-weight:700
+}
+
+
+/* V5.2 自由角度走線 */
+body.route-drawing #svg{cursor:crosshair}
+.route-angle-badge{
+  position:absolute;right:86px;bottom:8px;z-index:25;
+  display:none;padding:4px 8px;border-radius:999px;
+  background:rgba(14,28,36,.94);border:1px solid #4a7188;
+  color:#dff5ff;font-size:10px;pointer-events:none
+}
+body.route-drawing .route-angle-badge{display:block}
+
+
+/* V6.0 Cloud / PWA / 現場手機平板 */
+.cloud-header-btn{display:inline-flex;align-items:center;gap:5px;border-color:#476b7e}.cloud-dot{width:8px;height:8px;border-radius:50%;background:#6b7882;box-shadow:0 0 0 2px rgba(255,255,255,.05)}.cloud-dot.ok{background:#55df92;box-shadow:0 0 7px rgba(85,223,146,.6)}.cloud-dot.sync{background:#ffd45c;box-shadow:0 0 7px rgba(255,212,92,.6)}.cloud-dot.error{background:#ff727b;box-shadow:0 0 7px rgba(255,114,123,.6)}
+.cloud-modal-backdrop{position:fixed;inset:0;z-index:5000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(4,9,13,.78)}.cloud-modal-backdrop.show{display:flex}.cloud-modal-card{width:min(660px,96vw);max-height:94vh;overflow:auto;border-radius:14px;background:#18232b;border:1px solid #526a79;box-shadow:0 26px 80px rgba(0,0,0,.58)}.cloud-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid #3b4e5b}.cloud-modal-head h2{margin:0 0 4px;font-size:18px}.cloud-modal-body{padding:15px}.cloud-field{margin-bottom:10px}.cloud-field label{display:block;margin-bottom:5px;color:#aec3d1;font-size:11px}.cloud-field input{width:100%}.cloud-grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}.cloud-check{display:flex;gap:7px;align-items:center;font-size:12px;margin:8px 0 12px}.cloud-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0}.cloud-kpis>div{padding:8px;border:1px solid #3d5261;border-radius:8px;background:#111b22;text-align:center}.cloud-kpis b{display:block;font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis}.cloud-kpis span{display:block;margin-top:2px;font-size:9px;color:#91a9b8}.cloud-message{padding:9px;border-radius:8px;background:#10202a;border:1px solid #365568;font-size:11px;line-height:1.5;color:#ccecff;margin-bottom:10px}.cloud-message.ok{border-color:#3b7253;color:#bdf3ce}.cloud-message.error{border-color:#8d4750;color:#ffd0d4}.cloud-message.warn{border-color:#886a30;color:#ffe0a0}.cloud-actions-row,.cloud-links{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.cloud-actions-row button,.cloud-links button{flex:1;min-width:150px}.cloud-primary{background:#165171;border-color:#4fbcec;font-weight:700}.cloud-help{margin-top:12px;padding:9px;border-radius:8px;border:1px dashed #425c6c;color:#9fb6c4;font-size:11px;line-height:1.55}
+.cloud-photo-section{display:block}.cloud-photo-target{padding:7px 8px;border:1px solid #3c5260;border-radius:7px;background:#131e25;color:#d8eef8;font-size:11px;margin-bottom:8px}.cloud-photo-actions{display:flex;gap:6px;margin-bottom:7px}.camera-button{display:inline-flex;align-items:center;justify-content:center;flex:1;padding:8px 10px;border-radius:7px;background:#174e6c;border:1px solid #4aaee1;color:#fff;font-size:12px;font-weight:700;cursor:pointer}.cloud-photo-actions button{flex:0 0 auto}.cloud-photo-pending{font-size:10px;color:#96acba;margin:5px 0}#fieldPhotoNote{width:100%;margin-bottom:7px}#fieldPhotoUploadBtn{width:100%;margin-bottom:8px}.cloud-photo-list{display:grid;gap:6px;max-height:220px;overflow:auto}.cloud-photo-item{display:grid;grid-template-columns:1fr auto;gap:7px;padding:7px;border:1px solid #344956;border-radius:7px;background:#151f26}.cloud-photo-item b{font-size:11px;color:#fff}.cloud-photo-item small{display:block;color:#8fa7b6;font-size:9px;line-height:1.45;margin-top:2px}.cloud-photo-item a{align-self:center;color:#8edcff;font-size:10px;text-decoration:none}
+#svg{touch-action:none;-webkit-user-select:none;user-select:none}
+@media(max-width:820px){body{grid-template-rows:52px 1fr}header{padding:0 8px;gap:6px}header h1{font-size:13px;max-width:34vw;overflow:hidden;text-overflow:ellipsis}header .actions{gap:4px;justify-content:flex-end}header .actions button{font-size:10px;padding:6px 7px}body.simple-ui header .actions #saveBtn{display:none}.layout{grid-template-columns:1fr!important}.layout>.canvas-wrap{grid-column:1!important}aside,.right{display:block!important;position:fixed;top:52px;bottom:0;z-index:1200;width:min(86vw,360px);max-width:360px;transition:transform .2s ease;box-shadow:0 10px 40px rgba(0,0,0,.5)}aside{left:0;transform:translateX(-104%)}.right{right:0;transform:translateX(104%)}body.mobile-left-open aside{transform:translateX(0)}body.mobile-right-open .right{transform:translateX(0)}body.left-collapsed aside,body.right-collapsed .right{display:block!important}.canvas-toolbar{left:7px;top:7px;gap:4px;max-width:calc(100% - 55px);flex-wrap:wrap}.canvas-toolbar button{font-size:10px;padding:5px 6px}.zoom-pill{right:7px;top:7px;gap:4px}.zoom-pill button{padding:5px 8px}.quick-device-bar{top:68px!important;left:7px!important;right:7px!important;max-width:none!important;padding:5px!important}.status{left:7px;bottom:7px;max-width:80vw;font-size:9px;padding:5px 7px}.cloud-grid2{grid-template-columns:1fr}.cloud-modal-card{width:96vw}}
+
+
+/* V6.4 現場極簡版 */
+.mobile-panel-close{display:none!important}
+.route-touch-controls{
+  display:none;position:absolute;z-index:30;left:50%;bottom:44px;
+  transform:translateX(-50%);gap:7px;padding:6px;border-radius:10px;
+  background:rgba(13,25,32,.95);border:1px solid #486577;
+  box-shadow:0 6px 20px rgba(0,0,0,.35)
+}
+.route-touch-controls button{min-width:94px;min-height:38px;font-weight:700}
+#routeTouchFinishBtn{background:#155c43;border-color:#4fc58e;color:#fff}
+#routeTouchCancelBtn{background:#4d2d31;border-color:#8a5359;color:#ffd9dc}
+body.touch-pinching #svg{cursor:zoom-in}
+
+@media(max-width:1100px){
+  body{grid-template-rows:52px 1fr}
+  header{padding:0 8px;gap:6px}
+  header h1{font-size:13px;max-width:38vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  header .actions{gap:4px;justify-content:flex-end;min-width:0}
+  header .actions button{font-size:10px;padding:6px 7px;min-height:36px}
+  body.simple-ui header .actions #saveBtn{display:none}
+
+  .layout{grid-template-columns:1fr!important}
+  .layout>aside,.layout>.right{grid-column:auto!important}
+  .layout>.canvas-wrap{grid-column:1!important}
+
+  aside,.right{
+    display:block!important;position:fixed;top:52px;bottom:0;z-index:1200;
+    width:min(92vw,400px);max-width:400px;transition:transform .18s ease;
+    box-shadow:0 10px 40px rgba(0,0,0,.55);padding:10px;
+    overscroll-behavior:contain;-webkit-overflow-scrolling:touch
+  }
+  aside{left:0;transform:translateX(-104%)}
+  .right{right:0;transform:translateX(104%)}
+  body.mobile-left-open aside{transform:translateX(0)}
+  body.mobile-right-open .right{transform:translateX(0)}
+  body.left-collapsed aside,body.right-collapsed .right{display:block!important}
+
+  .sidebar-tabs,.right-tabs{top:-10px;padding-top:8px;gap:5px}
+  .sidebar-tabs button,.right-tabs button{min-height:40px}
+  .mobile-panel-close{
+    display:inline-flex!important;align-items:center;justify-content:center;
+    flex:0 0 42px!important;min-width:42px!important;
+    background:#4a2d31;border-color:#805057;color:#ffdadd;font-weight:800
+  }
+
+  .canvas-toolbar{left:7px;top:7px;gap:4px;max-width:calc(100% - 92px);flex-wrap:wrap}
+  .canvas-toolbar button{font-size:10px;padding:5px 7px;min-height:34px}
+  .canvas-quick-tools{gap:4px;flex-wrap:wrap}
+  .zoom-pill{right:7px;top:7px;gap:4px}
+  .zoom-pill button{width:36px;min-height:36px;padding:4px}
+  .quick-device-bar{top:88px!important;left:7px!important;right:7px!important;max-width:none!important;padding:5px!important;gap:4px!important}
+  .quick-device-bar button{min-height:34px!important;font-size:10px!important;padding:5px 7px!important}
+  .quick-device-title{display:none}
+
+  .status{left:7px;bottom:7px;max-width:78vw;font-size:9px;padding:5px 7px;pointer-events:none}
+  body.route-drawing .route-touch-controls{display:flex}
+  .route-angle-badge{right:7px;bottom:8px}
+  body.route-drawing .route-angle-badge{bottom:92px}
+
+  .cloud-grid2{grid-template-columns:1fr}
+  .cloud-kpis{grid-template-columns:1fr 1fr 1fr}
+  .cloud-modal-card{width:96vw}
+  .cloud-modal-head{position:sticky;top:0;z-index:2;background:#18232b}
+  .camera-button,#fieldPhotoUploadBtn{min-height:42px}
+}
+
+@media(max-width:520px){
+  header h1{max-width:31vw;font-size:12px}
+  header .actions #uiModeBtn{padding-left:6px;padding-right:6px}
+  .canvas-toolbar{max-width:calc(100% - 92px)}
+  .canvas-toolbar button{font-size:9px;padding:5px 6px}
+  .quick-device-bar{top:88px!important}
+  .quick-device-bar button{padding:5px 6px!important}
+  aside,.right{width:min(94vw,380px)}
+  .cloud-kpis{grid-template-columns:1fr 1fr}
+  .cloud-kpis>div:last-child{grid-column:1/-1}
+}
+
+
+/* V6.4 現場極簡操作 */
+.quick-device-bar{
+  display:none!important;position:absolute;left:12px;top:50px;z-index:34;
+  grid-template-columns:repeat(3,minmax(92px,1fr));gap:5px;width:min(350px,calc(100% - 24px));
+  padding:7px;background:rgba(17,29,37,.97);border:1px solid #4c6677;border-radius:10px;
+  box-shadow:0 10px 28px rgba(0,0,0,.42)
+}
+body.device-menu-open .quick-device-bar{display:grid!important}
+.quick-device-bar .quick-device{min-height:36px!important;padding:6px 7px!important;font-size:11px!important}
+.quick-device-cancel{display:none!important}
+#quickDeviceMenuBtn.active,#quickDeviceMenuBtn.place-active{background:#15577c;border-color:#54c8ff;color:#fff}
+.history-btn{min-width:34px!important;padding-left:7px!important;padding-right:7px!important;font-size:16px!important}
+.history-btn:disabled{opacity:.35;cursor:default}
+
+.selection-action-bar{
+  position:absolute;z-index:33;display:none;align-items:center;gap:5px;
+  padding:5px 6px;border-radius:9px;background:rgba(13,25,32,.96);
+  border:1px solid #4b687a;box-shadow:0 7px 22px rgba(0,0,0,.42);
+  transform:translateX(-50%);white-space:nowrap
+}
+.selection-action-bar.show{display:flex}
+.selection-action-bar button{min-height:30px;padding:5px 8px;font-size:10px}
+.selection-action-bar .danger{background:#522b30;border-color:#92515a;color:#ffdadd}
+.selection-action-name{max-width:115px;overflow:hidden;text-overflow:ellipsis;font-size:10px;color:#cce5f2;font-weight:700}
+
+body.route-drawing .route-touch-controls{display:flex}
+#routeTouchUndoBtn{background:#243c4b;border-color:#52728a;color:#e6f7ff}
+
+/* 手機設備設定改為底部工作卡，保留更多 CAD 可視區 */
+@media(max-width:520px){
+  .right{
+    left:0!important;right:0!important;top:auto!important;bottom:0!important;
+    width:100%!important;max-width:none!important;height:min(72vh,620px);
+    border-radius:15px 15px 0 0;transform:translateY(104%)!important;
+    border-left:1px solid #526574;border-top:1px solid #526574
+  }
+  body.mobile-right-open .right{transform:translateY(0)!important}
+  .selection-action-bar{
+    position:absolute!important;left:50%!important;right:auto!important;top:auto!important;bottom:42px!important;
+    transform:translateX(-50%)!important;max-width:94%;
+  }
+  .selection-action-name{max-width:92px}
+  body.route-drawing .selection-action-bar{display:none!important}
+  .route-touch-controls{bottom:42px;max-width:94vw}
+  .route-touch-controls button{min-width:76px;padding:6px 8px}
+}
+
+
+/* V6.5 自訂物件 */
+.custom-device-entry{border-color:#8e72bf!important;color:#eadcff!important}.custom-library-create{width:100%;min-height:38px;background:#332846;border-color:#775f9d;color:#eadcff;font-weight:700}.custom-library-mini{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}.custom-library-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;padding:5px 7px;border-radius:7px;border:1px solid #4c5e6b;background:#202c34;color:#dceaf2;font-size:10px;cursor:pointer}.custom-library-chip b{font-size:14px;color:#d8c2ff}.custom-library-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.custom-device-backdrop{position:fixed;inset:0;z-index:5200;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(4,9,13,.80)}.custom-device-backdrop.show{display:flex}.custom-device-card{width:min(660px,96vw);max-height:94vh;overflow:auto;border-radius:14px;background:#18232b;border:1px solid #65527e;box-shadow:0 26px 80px rgba(0,0,0,.58)}.custom-device-head{position:sticky;top:0;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:14px 16px;background:#18232b;border-bottom:1px solid #493d5c}.custom-device-head h2{margin:0 0 4px;font-size:18px}.custom-device-body{padding:14px}.custom-grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}.custom-subtitle{font-size:11px;font-weight:700;color:#c8b5e6;margin:8px 0 6px}.custom-icon-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}.custom-icon-grid button{min-width:0;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 3px;border-radius:9px;background:#202c34;border:1px solid #435662;color:#dceaf2}.custom-icon-grid button b{font-size:20px;line-height:1}.custom-icon-grid button span{font-size:9px;color:#9fb3c0}.custom-icon-grid button.active{border-color:#a88be0;background:#382d4b;box-shadow:0 0 0 2px rgba(168,139,224,.16)}.custom-preview-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}.custom-device-preview{min-width:170px;display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;background:#111b22;border:1px solid #475c69;color:#fff}.custom-device-preview b{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#332846;border:1px solid #8e72bf;font-size:18px}.custom-device-preview span{font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.custom-device-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.custom-device-actions button{min-width:120px;min-height:40px}.custom-device-actions .custom-primary{background:#5c4182;border-color:#a98add;color:#fff;font-weight:700}.custom-saved-list{display:flex;flex-wrap:wrap;gap:6px;min-height:28px}.custom-saved-item{display:inline-grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px;max-width:100%;padding:5px;border-radius:8px;border:1px solid #465966;background:#202b33}.custom-saved-item button.load{border:0;background:transparent;color:#e7f1f6;padding:2px 4px;display:flex;align-items:center;gap:5px;min-width:0}.custom-saved-item button.load b{font-size:15px;color:#d9c2ff}.custom-saved-item button.load span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}.custom-saved-item button.remove{width:26px;min-width:26px;height:26px;padding:0;background:#40282c;border-color:#74464c;color:#ffd5d8}.custom-edit-btn{width:100%;margin:0 0 7px;background:#332846;border-color:#775f9d;color:#eadcff}@media(max-width:600px){.custom-grid2{grid-template-columns:1fr}.custom-icon-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.custom-preview-row{align-items:stretch;flex-direction:column}.custom-device-preview{min-width:0;width:100%}}
+
+
+/* V6.7 程式結構整理版 */
+.building-jump{
+  min-height:32px;max-width:128px;padding:5px 26px 5px 8px;
+  border-radius:7px;border:1px solid #425b6b;background:#18242c;color:#e3eef4;
+  font-size:10px
+}
+.cloud-header-btn{min-width:86px;justify-content:center}
+#cloudStatusText{max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alignment-guide{
+  stroke:#55e0ff;stroke-width:1.4;stroke-dasharray:5 4;
+  vector-effect:non-scaling-stroke;pointer-events:none;opacity:.95
+}
+body.duplicate-place-mode #svg{cursor:copy}
+#selectionDuplicateBtn{background:#253f52;border-color:#557a92;color:#e7f6ff}
+@media(max-width:1100px){
+  .building-jump{max-width:104px;min-height:34px;font-size:9px;padding-left:6px}
+  .cloud-header-btn{min-width:74px}
+}
+@media(max-width:520px){
+  .building-jump{max-width:88px}
+  .selection-action-bar button{padding-left:7px;padding-right:7px}
+  .selection-action-name{max-width:74px}
+}
+
+
+/* V6.8 精準定位 / 設備分類 */
+.building-focus-box{
+  fill:rgba(85,224,255,.07);
+  stroke:#55e0ff;
+  stroke-width:2.2;
+  stroke-dasharray:8 5;
+  vector-effect:non-scaling-stroke;
+  pointer-events:none
+}
+.filter-preset-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.filter-preset-grid button{min-width:0;padding:6px 4px;font-size:9px}
+.device-filter-head{
+  margin-top:9px;display:flex;align-items:center;justify-content:space-between;gap:7px;
+  color:#b9cbd6;font-size:10px
+}
+.device-filter-head>div{display:flex;gap:4px}
+.device-filter-head button{padding:4px 6px;min-height:28px;font-size:9px}
+.device-type-filters{
+  display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;max-height:145px;overflow:auto
+}
+.device-filter-chip{
+  display:inline-flex;align-items:center;gap:4px;min-height:30px;max-width:100%;
+  padding:5px 7px;border-radius:999px;border:1px solid #425764;
+  background:#1b2730;color:#c7d6df;font-size:9px
+}
+.device-filter-chip b{font-size:10px}
+.device-filter-chip.active{border-color:#67cbea;background:#173b4b;color:#e8f9ff}
+#deviceFilterAllBtn.active{border-color:#67cbea;background:#173b4b}
+@media(max-width:600px){
+  .filter-preset-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .device-type-filters{max-height:116px}
+}
+
+
+/* V6.9 現場操作精簡 */
+#viewBackBtn,#quickSearchBtn{min-width:34px;padding-left:7px;padding-right:7px;font-size:15px}
+#viewBackBtn:disabled{opacity:.32;cursor:default}
+#selectionLockBtn.active{background:#604c1e;border-color:#c99e3a;color:#fff2bd}
+.component-lock-label{fill:#ffe49a;font-size:12px;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.7))}
+.device-search-panel{
+  position:absolute;z-index:34;left:12px;top:58px;width:min(390px,calc(100% - 24px));display:none;
+  padding:8px;border-radius:10px;background:rgba(16,27,35,.98);border:1px solid #526c7c;box-shadow:0 12px 32px rgba(0,0,0,.48)
+}
+.device-search-panel.show{display:block}
+.device-search-head{display:grid;grid-template-columns:1fr auto;gap:6px}
+.device-search-head input{width:100%;min-height:38px}
+.device-search-head button{min-width:38px}
+.device-search-results{display:grid;gap:5px;margin-top:7px;max-height:330px;overflow:auto}
+.device-search-result{display:grid!important;grid-template-columns:1fr!important;text-align:left!important;padding:8px 9px!important;background:#192831!important;border-color:#3c5665!important}
+.device-search-result b{font-size:11px;color:#e8f5fb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.device-search-result span{margin-top:2px;font-size:9px;color:#91aab8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.selection-action-bar #selectionPhotoBtn{font-variant-numeric:tabular-nums}
+@media(max-width:520px){
+  .device-search-panel{left:7px;top:88px;width:calc(100% - 14px)}
+  .device-search-results{max-height:42vh}
+  .selection-action-bar{gap:3px;padding:4px}
+  .selection-action-bar button{min-width:32px;padding:5px 6px;font-size:10px}
+  .selection-action-name{max-width:68px}
+}
+
+/* V6.9.1 全介面 QA：1101–1500px 桌機畫布較窄時，避免右欄按鈕被 +/- 縮放鍵覆蓋 */
+@media (min-width:1101px) and (max-width:1500px){
+  .canvas-toolbar{
+    max-width:calc(100% - 105px);
+    flex-wrap:wrap;
+    gap:5px;
+  }
+  .canvas-toolbar button{
+    padding-left:7px;
+    padding-right:7px;
+  }
+  .building-jump{max-width:108px}
+  .quick-device-bar{top:94px!important}
+}

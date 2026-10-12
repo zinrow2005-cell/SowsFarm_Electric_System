@@ -1,0 +1,3 @@
+虎尾場 2D CAD 配置系統
+Version: 6.9.1
+Build: Full Interface QA Fix

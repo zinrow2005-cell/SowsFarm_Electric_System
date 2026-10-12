@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#151c22" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="虎尾場CAD" />
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="apple-touch-icon" href="./assets/icons/icon-192.png" />
+<title>虎尾場 2D CAD 配置系統 V6.9.1 全介面 QA 修正版</title>
+<link rel="stylesheet" href="./assets/css/app.css" />
+</head>
+<body>
+<header>
+  <h1>虎尾場 2D CAD 配置系統 V6.4 現場極簡版</h1>
+  <div class="actions">
+    <button id="uiModeBtn" class="ui-mode-btn" type="button">⚙ 進階設定</button>
+    <button id="cloudBtn" class="cloud-header-btn" type="button"><span id="cloudDot" class="cloud-dot"></span><span id="cloudStatusText">雲端</span></button>
+    <button id="saveBtn">儲存專案</button>
+    <button id="moreExportBtn" class="header-more-btn" type="button">檔案 / 匯出 ▾</button>
+    <button id="loadBtn" class="export-extra">載入 JSON</button><input id="loadInput" type="file" accept="application/json" hidden>
+    <button id="svgBtn" class="export-extra">匯出 SVG</button><button id="pngBtn" class="export-extra">匯出 PNG</button><button id="csvBtn" class="export-extra">工程清單 CSV</button>
+  </div>
+</header>
+<div class="layout">
+<aside data-active-group="common">
+  <div class="sidebar-tabs">
+    <button id="leftTabCommon" class="active" type="button">操作</button>
+    <button id="leftTabLibrary" type="button">設備</button>
+    <button id="leftTabView" type="button">設定</button>
+    <button id="mobileLeftClose" class="mobile-panel-close" type="button" aria-label="關閉工具欄">✕</button>
+  </div>
+  <div class="compact-hint advanced-only">進階模式可顯示完整繪圖、比例尺、工程設定與匯出工具。</div>
+  <div class="section" data-ui-group="common"><h3>繪圖工具</h3><div class="toolgrid">
+    <button class="tool active" data-tool="select">選取 / 拖移</button><button class="tool" data-tool="pan">平移</button>
+    <button class="tool" data-tool="water">畫水線</button><button class="tool" data-tool="electric">畫電線</button>
+    <button class="advanced-only tool" data-tool="rect">矩形</button><button class="advanced-only tool" data-tool="text">文字</button>
+    <button class="advanced-only" id="clearUserBtn">清除新增</button><button class="advanced-only tool" data-tool="calibrate">校正比例尺</button><button class="advanced-only tool" data-tool="measure">量距</button>
+  </div>
+  <div class="prop-row" style="margin-top:9px"><label>水線來源</label><select id="waterSource"><option value="tower">水塔</option><option value="city">自來水</option><option value="ground">地下水</option><option value="mixed">混合/切換後</option></select></div>
+  <div class="prop-row advanced-only"><label>走線方式</label><select id="routeMode"><option value="free" selected>自由角度</option><option value="ortho">正交 90°</option></select></div>
+  <div class="prop-row advanced-only"><label>端點吸附</label><select id="snapMode"><option value="on">開啟</option><option value="off">關閉</option></select></div>
+  <div class="prop-row advanced-only"><label>格點吸附</label><select id="gridSnap"><option value="0">關閉</option><option value="5">5 單位</option><option value="10" selected>10 單位</option><option value="20">20 單位</option></select></div>
+  <div class="tiny">畫水線／電線：第一下決定起點，滑鼠移到任何方向即可自由決定角度；單擊增加轉折點，雙擊或 Enter 完成，Esc 取消。靠近元件時可吸附到端點。</div></div>
+
+  <div class="section" data-ui-group="view"><h3>比例尺 / 實際長度</h3>
+    <div class="prop-row"><label>m / 圖面單位</label><input id="scaleFactor" type="number" step="0.000001" value="" placeholder="尚未校正"></div>
+    <div class="prop-row"><label>校正狀態</label><input id="scaleStatus" class="readonly" type="text" readonly value="尚未校正"></div>
+    <div class="toolgrid"><button id="clearScaleBtn">清除比例尺</button><button id="defaultScaleBtn">預設 60.7m 參考</button></div>
+    <div class="tiny" style="margin-top:8px">最準確做法：按「校正比例尺」→在圖上點一段已知尺寸的兩端→輸入實際公尺（例如底部標示 60.7 m）。之後水線/電線長度會自動顯示實際公尺。</div>
+  </div>
+
+  <div class="section" data-ui-group="common"><h3>快速檢視 / 設備標示</h3>
+    <div class="filter-preset-grid">
+      <button id="viewAllBtn">全部</button>
+      <button id="viewWaterBtn">水路</button>
+      <button id="viewElectricBtn">電力</button>
+      <button id="viewVentBtn">通風</button>
+      <button id="viewWasteBtn">排污 / 清洗</button>
+    </div>
+    <div class="prop-row" style="margin-top:8px"><label>棟舍</label><select id="buildingFilter"><option value="all">全部棟舍</option><option>產房A棟</option><option>產房B棟</option><option>產房C棟</option><option>產房D棟</option><option>公豬舍</option><option>新女豬育成區・配種區</option><option>妊娠舍</option></select></div>
+    <div class="device-filter-head"><span>設備項目（可複選）</span><div><button id="deviceFilterAllBtn" type="button">全部設備</button><button id="deviceFilterNoneBtn" type="button">全隱藏</button></div></div>
+    <div id="deviceTypeFilters" class="device-type-filters"><span class="tiny">尚未放置設備。</span></div>
+    <div class="prop-row" style="margin-top:8px"><label>單一設備</label><select id="deviceSingleFilter"><option value="">依上方篩選</option></select></div>
+    <div class="tiny">可顯示全部、任意多個設備類型，或只顯示單一設備。只影響標示顯示，不會刪除資料。</div>
+  </div>
+
+  <div class="section" data-ui-group="view"><h3>底圖 / 圖層</h3>
+    <div class="layer-row"><input type="checkbox" id="cadBaseChk" checked><span>精準 CAD 底圖</span></div>
+    <div class="layer-row"><input type="checkbox" id="whiteRefChk"><span>白底確認圖</span></div>
+    <div class="layer-row"><input type="checkbox" id="hotspotChk" checked><span>區域點選層（隱形）</span></div>
+    <div class="layer-row"><input type="checkbox" id="waterChk" checked><span>水線層</span></div>
+    <div class="layer-row"><input type="checkbox" id="elecChk" checked><span>電路層</span></div>
+    <div class="layer-row"><input type="checkbox" id="componentChk" checked><span>水路 / 配電元件層</span></div>
+    <div class="layer-row"><input type="checkbox" id="ventChk" checked><span>水簾 / 風扇設備層</span></div>
+    <div class="layer-row"><input type="checkbox" id="annoChk" checked><span>註記層</span></div>
+    <div class="notice" style="margin-top:8px">尺寸標示已統一精簡為<strong>小數點後 1 位</strong>，例如 60.693 → 60.7 m，降低畫面雜亂。</div>
+  </div>
+
+  <div class="section" data-ui-group="library"><h3>水路元件庫（可拖到圖面）</h3><div class="libgrid">
+    <div class="libitem water" draggable="true" data-component="waterTower"><span class="ico">▣</span>水塔</div>
+    <div class="libitem city" draggable="true" data-component="cityWater"><span class="ico">◆</span>自來水</div>
+    <div class="libitem ground" draggable="true" data-component="groundWater"><span class="ico">◉</span>地下水</div>
+    <div class="libitem valve" draggable="true" data-component="threeWay"><span class="ico">Y</span>三向閥</div>
+  </div><div class="tiny" style="margin-top:8px">三向閥放到圖面後，點一下即可設定入口 A/B/C 分別連接水塔、地下水、自來水，並指定目前供水來源與出水去向。</div></div>
+
+  <div class="section" data-ui-group="library"><h3>配電元件庫（可拖到圖面）</h3><div class="libgrid">
+    <div class="libitem utility" draggable="true" data-component="utilityPower"><span class="ico">⚡</span>台電進線</div>
+    <div class="libitem generator" draggable="true" data-component="generator"><span class="ico">G</span>發電機</div>
+    <div class="libitem ats" draggable="true" data-component="ats"><span class="ico">A</span>ATS切換盤</div>
+    <div class="libitem mainp" draggable="true" data-component="mainSwitch"><span class="ico">▦</span>總開關箱</div>
+    <div class="libitem mainp" draggable="true" data-component="mainPanel"><span class="ico">▤</span>總配電箱</div>
+    <div class="libitem subp" draggable="true" data-component="subPanel"><span class="ico">▥</span>分電箱</div>
+    <div class="libitem eqp" draggable="true" data-component="equipmentPanel"><span class="ico">▧</span>設備電箱</div>
+  </div><div class="tiny" style="margin-top:8px">可建立「台電＋發電機 → ATS → 總開關箱 → 總配電箱 → 分電箱 → 設備」。發電機預設125kVA、PF0.8，可自行修改。</div></div>
+
+  <div class="section" data-ui-group="library"><h3>水簾 / 通風設備庫（可拖到圖面）</h3><div class="libgrid">
+    <div class="libitem pad" draggable="true" data-component="coolingPad"><span class="ico">▥</span>水簾設備</div>
+    <div class="libitem fan" draggable="true" data-component="exhaustFan"><span class="ico">✦</span>主排風扇</div>
+    <div class="libitem guide" draggable="true" data-component="guideFan"><span class="ico">➤</span>導引扇</div>
+    <div class="libitem pump" draggable="true" data-component="coolingPump"><span class="ico">P</span>水簾泵浦</div>
+    <div class="libitem heat" draggable="true" data-component="heatLamp"><span class="ico">☀</span>保溫燈 / 保溫設備</div>
+  </div><div class="tiny" style="margin-top:8px">主排風扇預設為 A 級備援、水簾泵浦與保溫燈預設為 B 級（可修改）。V2.2可在配電箱內將主排風扇、導引扇、水簾泵浦建立成分段溫控，設定啟停溫度、延遲與互鎖。</div></div>
+  <div class="section" data-ui-group="library">
+    <h3>自訂物件</h3>
+    <button id="customDeviceLibraryBtn" class="custom-library-create" type="button">＋ 建立自訂物件</button>
+    <div id="customDeviceLibraryMini" class="custom-library-mini"><div class="tiny">尚未建立自訂設備。</div></div>
+  </div>
+</aside>
+
+<main class="canvas-wrap" id="canvasWrap">
+  <div class="canvas-toolbar">
+    <div class="canvas-quick-tools">
+      <button id="quickSelectBtn" type="button">↖ 選取</button>
+      <button id="quickPanBtn" type="button">✋ 平移</button>
+      <button id="quickWaterBtn" type="button">💧 水線</button>
+      <button id="quickElectricBtn" type="button">⚡ 電線</button>
+      <button id="quickDeviceMenuBtn" type="button">＋ 設備</button>
+      <button id="undoBtn" class="history-btn" type="button" title="復原" disabled>↶</button>
+      <button id="redoBtn" class="history-btn" type="button" title="重做" disabled>↷</button>
+    </div>
+    <button id="viewBackBtn" type="button" title="回上一個視圖" disabled>←</button>
+    <button id="fitBtn">全圖</button>
+    <button id="quickSearchBtn" type="button" title="搜尋設備">🔎</button>
+    <select id="buildingJump" class="building-jump" title="棟舍精準定位">
+      <option value="">棟舍 ▾</option>
+      <option value="farrowingA">產房A 42床</option>
+      <option value="farrowingB">產房B 36床</option>
+      <option value="farrowingC">產房C 36床</option>
+      <option value="farrowingD">產房D 36床</option>
+      <option value="boar">公豬舍</option>
+      <option value="giltBreeding">新女豬 / 配種</option>
+      <option value="gestationUpper">妊娠舍（上棟）</option>
+      <option value="gestationLower">妊娠舍（下棟）</option>
+      <option value="bath2">浴室2</option>
+    </select>
+    <button id="resetBtn" class="advanced-only">重設視圖</button><button id="modeBtn" class="advanced-only">底圖：深色CAD</button>
+    <button id="leftPanelToggle" type="button">◀ 收合左欄</button><button id="rightPanelToggle" type="button">收合右欄 ▶</button>
+  </div>
+  <div id="deviceSearchPanel" class="device-search-panel" aria-hidden="true">
+    <div class="device-search-head"><input id="deviceSearchInput" type="search" placeholder="搜尋設備名稱、棟舍、功能…" autocomplete="off"><button id="deviceSearchCloseBtn" type="button">✕</button></div>
+    <div id="deviceSearchResults" class="device-search-results"><div class="tiny">輸入名稱即可快速定位。</div></div>
+  </div>
+  <div class="quick-device-bar" id="quickDeviceBar" aria-hidden="true">
+    <button class="quick-device" data-quick-component="exhaustFan" type="button">✦ 排風扇</button>
+    <button class="quick-device" data-quick-component="coolingPad" type="button">▥ 水簾</button>
+    <button class="quick-device" data-quick-component="coolingPump" type="button">P 泵浦</button>
+    <button class="quick-device" data-quick-component="subPanel" type="button">▥ 分電箱</button>
+    <button class="quick-device" data-quick-component="heatLamp" type="button">☀ 保溫</button>
+    <button class="quick-device" data-quick-component="threeWay" type="button">Y 三向閥</button>
+    <button id="quickCustomDeviceBtn" class="quick-device custom-device-entry" type="button">＋ 自訂物件</button>
+    <button id="cancelPlaceBtn" class="quick-device-cancel" type="button">取消放置</button>
+  </div>
+  <div id="routeTouchControls" class="route-touch-controls" aria-hidden="true">
+    <button id="routeTouchUndoBtn" type="button">↶ 上一點</button>
+    <button id="routeTouchFinishBtn" type="button">✓ 完成線路</button>
+    <button id="routeTouchCancelBtn" type="button">取消</button>
+  </div>
+  <div class="zoom-pill"><button id="minus">－</button><button id="plus">＋</button></div>
+  <svg id="svg" viewBox="0 0 1272 1237" xmlns="http://www.w3.org/2000/svg">
+    <g id="viewport">
+      <g id="cadBase"><image preserveAspectRatio="xMidYMid meet" href="./assets/images/cad-base.png" x="0" y="0" width="1272" height="1237"/></g>
+      <g id="whiteRef" style="display:none"><image preserveAspectRatio="xMidYMid meet" href="./assets/images/cad-white-reference.png" x="0" y="0" width="1272" height="1237"/></g>
+      <g id="hotspots">
+        <polygon class="hotspot editable" data-name="產房A棟 42床" data-area="318.70 m²" points="80,45 675,130 632,326 75,204"/>
+        <polygon class="hotspot editable" data-name="產房B棟 36床" data-area="302.89 m²" points="75,205 632,326 585,514 83,400"/>
+        <polygon class="hotspot editable" data-name="產房C棟 36床" data-area="261.29 m²" points="700,76 1183,84 1140,338 704,314"/>
+        <polygon class="hotspot editable" data-name="產房D棟 36床" data-area="264.29 m²" points="704,315 1140,339 1095,613 695,516"/>
+        <rect class="hotspot editable" data-name="產房走道" data-area="74.55 m²" x="606" y="145" width="72" height="386"/>
+        <rect class="hotspot editable" data-name="浴室2" data-area="3.80 m²" x="76" y="413" width="72" height="67"/>
+        <polygon class="hotspot editable" data-name="廁所・洗衣曬衣區" data-area="46.29 m²" points="150,416 583,510 540,543 150,481"/>
+        <rect class="hotspot editable" data-name="採精室" data-area="10.23 m²" x="77" y="514" width="88" height="74"/>
+        <rect class="hotspot editable" data-name="儲物室" data-area="10.38 m²" x="77" y="589" width="88" height="75"/>
+        <rect class="hotspot editable" data-name="公豬舍" data-area="149.85 m²" x="166" y="548" width="420" height="117"/>
+        <polygon class="hotspot editable" data-name="麻布袋洗曬區" data-area="93.09 m²" points="586,514 1100,615 1100,665 586,665"/>
+        <rect class="hotspot editable" data-name="新女豬育成區・配種區" data-area="579.10 m²" x="95" y="675" width="1025" height="158"/>
+        <rect class="hotspot editable" data-name="走道" data-area="40.26 m²" x="1120" y="675" width="73" height="158"/>
+        <rect class="hotspot editable" data-name="妊娠舍" data-area="566.32 m²" x="95" y="846" width="1025" height="150"/>
+        <rect class="hotspot editable" data-name="走道" data-area="39.37 m²" x="1120" y="846" width="73" height="150"/>
+        <rect class="hotspot editable" data-name="棟舍間走道" data-area="57.30 m²" x="95" y="996" width="1025" height="62"/>
+        <rect class="hotspot editable" data-name="浴室3" data-area="1.62 m²" x="1120" y="996" width="73" height="62"/>
+        <rect class="hotspot editable" data-name="妊娠舍" data-area="347.02 m²" x="95" y="1058" width="680" height="115"/>
+        <rect class="hotspot editable" data-name="妊娠舍" data-area="206.74 m²" x="775" y="1058" width="345" height="115"/>
+        <rect class="hotspot editable" data-name="走道" data-area="37.79 m²" x="1120" y="1058" width="73" height="115"/>
+      </g>
+      <g id="waterLayer"></g><g id="elecLayer"></g><g id="componentLayer"></g><g id="ventLayer"></g><g id="annoLayer"></g><g id="focusGuideLayer"></g><g id="alignmentGuideLayer"></g><g id="selectionHandlesLayer"></g>
+    </g>
+  </svg>
+  <div id="selectionActionBar" class="selection-action-bar" aria-hidden="true">
+    <span id="selectionActionName" class="selection-action-name">設備</span>
+    <button id="selectionLockBtn" type="button" title="鎖定位置與尺寸">🔒</button>
+    <button id="selectionPhotoBtn" type="button" title="現場拍照">📷</button>
+    <button id="selectionDuplicateBtn" type="button" title="複製設備">⧉</button>
+    <button id="selectionDetailBtn" type="button" title="詳細設定">⋯</button>
+    <button id="selectionDeleteBtn" class="danger" type="button" title="刪除">🗑</button>
+  </div>
+  <div id="objectDetailPopover" class="object-detail-popover" aria-hidden="true">
+    <div class="object-detail-head">
+      <div id="objectDetailIcon" class="object-detail-icon">●</div>
+      <div class="object-detail-title"><strong id="objectDetailName">設備</strong><span id="objectDetailType">—</span></div>
+      <button id="objectDetailClose" class="object-detail-close" type="button">×</button>
+    </div>
+    <div class="object-main-function"><b>主要功能</b><span id="objectDetailMainFunction">—</span></div>
+    <div id="objectDetailGrid" class="object-detail-grid"></div>
+    <div id="objectDetailNote" class="object-detail-note" style="display:none"></div>
+    <div id="objectDetailActions" class="object-detail-actions"></div>
+    <div class="object-detail-tip">此視窗資料來自目前圖面設備設定；來源、去向與實際接線仍應以現場確認為準。</div>
+  </div>
+  <div id="routeAngleBadge" class="route-angle-badge">角度 —</div>
+  <div class="status" id="status">工具：選取｜V6.9.1：全介面 QA；修正中等寬度桌機右欄按鈕與縮放鍵重疊。</div>
+</main>
+
+<div id="customDeviceModal" class="custom-device-backdrop" aria-hidden="true">
+  <div class="custom-device-card" role="dialog" aria-modal="true" aria-labelledby="customDeviceTitle">
+    <div class="custom-device-head">
+      <div><h2 id="customDeviceTitle">＋ 自訂物件</h2><div class="tiny">系統沒有的新設備，可以自己命名並挑選最接近的圖示。</div></div>
+      <button id="customDeviceCloseBtn" type="button">✕</button>
+    </div>
+    <div class="custom-device-body">
+      <div class="custom-saved-wrap"><div class="custom-subtitle">我的常用自訂設備</div><div id="customSavedList" class="custom-saved-list"></div></div>
+      <div class="custom-grid2">
+        <div class="cloud-field"><label>物件名稱</label><input id="customDeviceName" type="text" maxlength="40" placeholder="例如：高壓清洗機"></div>
+        <div class="cloud-field"><label>設備類別</label><select id="customDeviceCategory"><option value="other">一般 / 其他</option><option value="water">水路設備</option><option value="electric">電力設備</option><option value="vent">通風 / 環控設備</option><option value="waste">排污 / 清洗設備</option></select></div>
+      </div>
+      <div class="cloud-field"><label>主要功能（選填）</label><input id="customDeviceFunction" type="text" maxlength="80" placeholder="例如：沖洗走道與設備"></div>
+      <div class="custom-subtitle">選擇圖示</div>
+      <div id="customIconGrid" class="custom-icon-grid">
+        <button type="button" data-custom-icon="⚙" title="機械設備"><b>⚙</b><span>機械</span></button><button type="button" data-custom-icon="M" title="馬達"><b>M</b><span>馬達</span></button><button type="button" data-custom-icon="P" title="泵浦"><b>P</b><span>泵浦</span></button><button type="button" data-custom-icon="✦" title="風扇"><b>✦</b><span>風扇</span></button><button type="button" data-custom-icon="▥" title="濾網/水簾"><b>▥</b><span>濾網</span></button><button type="button" data-custom-icon="⚡" title="電力"><b>⚡</b><span>電力</span></button><button type="button" data-custom-icon="▦" title="控制箱"><b>▦</b><span>控制箱</span></button><button type="button" data-custom-icon="◇" title="閥門"><b>◇</b><span>閥門</span></button><button type="button" data-custom-icon="◉" title="感測器"><b>◉</b><span>感測</span></button><button type="button" data-custom-icon="☀" title="加熱設備"><b>☀</b><span>加熱</span></button><button type="button" data-custom-icon="▣" title="槽體/容器"><b>▣</b><span>槽體</span></button><button type="button" data-custom-icon="●" title="通用設備"><b>●</b><span>通用</span></button><button type="button" data-custom-icon="井" title="地下水井 / 水井"><b>井</b><span>水井</span></button><button type="button" data-custom-icon="污P" title="污水 / 糞尿抽取幫浦"><b>污P</b><span>污水泵</span></button><button type="button" data-custom-icon="沖" title="棟舍水溝沖洗管"><b>沖</b><span>沖洗管</span></button><button type="button" data-custom-icon="渠" title="水溝 / 排水溝"><b>渠</b><span>排水溝</span></button><button type="button" data-custom-icon="噴" title="高壓清洗 / 噴槍"><b>噴</b><span>噴洗</span></button><button type="button" data-custom-icon="抽" title="抽水 / 揚水設備"><b>抽</b><span>抽水</span></button><button type="button" data-custom-icon="濾" title="過濾器"><b>濾</b><span>過濾</span></button><button type="button" data-custom-icon="錶" title="水錶 / 流量計"><b>錶</b><span>水錶</span></button><button type="button" data-custom-icon="浮" title="浮球 / 液位控制"><b>浮</b><span>浮球</span></button><button type="button" data-custom-icon="閘" title="閘閥 / 截止閥"><b>閘</b><span>閘閥</span></button><button type="button" data-custom-icon="藥" title="加藥 / 消毒設備"><b>藥</b><span>加藥</span></button><button type="button" data-custom-icon="壓" title="壓力設備 / 加壓泵"><b>壓</b><span>加壓</span></button>
+      </div>
+      <div class="custom-preview-row"><div id="customDevicePreview" class="custom-device-preview"><b id="customPreviewIcon">⚙</b><span id="customPreviewName">自訂設備</span></div><label class="cloud-check"><input id="customSaveTemplate" type="checkbox" checked> 儲存成常用自訂設備</label></div>
+      <div class="custom-device-actions"><button id="customDeviceCancelBtn" type="button">取消</button><button id="customDeviceApplyBtn" class="custom-primary" type="button">建立並放置</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="deleteConfirmModal" class="delete-confirm-backdrop" aria-hidden="true">
+  <div class="delete-confirm-card" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle">
+    <h3 id="deleteConfirmTitle">刪除標示物件</h3>
+    <p>刪除後會從目前專案移除這個標示物件。原始 CAD 底圖不會被刪除。</p>
+    <div id="deleteConfirmName" class="delete-confirm-name">—</div>
+    <div class="delete-confirm-actions">
+      <button id="deleteConfirmCancel" type="button">取消</button>
+      <button id="deleteConfirmOk" class="danger" type="button">確認刪除</button>
+    </div>
+  </div>
+</div>
+
+<div class="right" data-right-tab="basic">
+  <div class="right-tabs">
+    <button id="rightTabBasic" class="active" type="button">設備設定</button>
+    <button id="rightTabInfo" type="button">總覽</button>
+    <button id="mobileRightClose" class="mobile-panel-close" type="button" aria-label="關閉設備設定">✕</button>
+  </div>
+  <div class="section primary-properties"><h3>設備設定</h3><div class="notice simple-device-hint" style="margin-bottom:8px">只保留這個設備目前需要修改的重點。</div>
+    <div class="prop-row"><label>名稱</label><input id="name" type="text"></div>
+    <div class="prop-row"><label>主要功能</label><input id="mainFunction" type="text" placeholder="例如：主排風降溫 / 水源切換 / 區域配電"></div>
+    <button id="editCustomDeviceBtn" class="custom-edit-btn" type="button" style="display:none">✎ 自訂名稱 / 圖示 / 類別</button>
+    <div class="prop-row advanced-only"><label>物件類型</label><input id="type" type="text" readonly></div>
+    <div class="prop-row advanced-only"><label>X</label><input id="x1" type="number" step="0.1"></div>
+    <div class="prop-row advanced-only"><label>Y</label><input id="y1" type="number" step="0.1"></div>
+    <div class="prop-row advanced-only"><label>旋轉角度</label><input id="rotation" type="number" step="1" value="0"></div>
+    <div class="prop-row"><label>圖示倍率</label><input id="iconScale" type="number" step="0.1" min="0.2" max="5" value="0.8"></div>
+    <div class="prop-row"><label>寬度比例</label><input id="shapeScaleX" type="number" step="0.05" min="0.3" max="3" value="1"></div>
+    <div class="prop-row"><label>高度比例</label><input id="shapeScaleY" type="number" step="0.05" min="0.3" max="3" value="1"></div>
+    <div class="prop-row"><label>比例鎖定</label><select id="shapeLock"><option value="yes">鎖定 1:1</option><option value="no">自由比例</option></select></div>
+    <div class="prop-actions shape-presets">
+      <button id="shapeNormalBtn" type="button">正常 1:1</button>
+      <button id="shapeWideBtn" type="button">寬版</button>
+      <button id="shapeTallBtn" type="button">高版</button>
+    </div>
+    <div class="prop-row advanced-only"><label>標籤倍率</label><input id="labelScale" type="number" step="0.1" min="0.4" max="3" value="0.9"></div>
+    <div class="prop-row advanced-only"><label>顯示名稱</label><select id="showLabel"><option value="yes">顯示</option><option value="no">隱藏</option></select></div>
+    <div class="prop-actions"><button id="iconSmallerBtn" type="button">圖示縮小</button><button id="iconLargerBtn" type="button">圖示放大</button><button id="labelToggleBtn" class="advanced-only" type="button">名稱顯示/隱藏</button></div>
+    <div class="section advanced-only" style="margin:6px 0 10px;padding:8px"><h3 style="margin-bottom:6px">全域標記顯示控制</h3><div class="prop-row"><label>全部圖示倍率</label><input id="globalIconScale" type="number" step="0.1" min="0.2" max="5" value="0.8"></div><div class="prop-row"><label>全部標籤倍率</label><input id="globalLabelScale" type="number" step="0.1" min="0.4" max="3" value="0.9"></div><div class="prop-actions"><button id="applyGlobalMarkerBtn" type="button">套用到全部標記</button><button id="hideAllLabelsBtn" type="button">全部隱藏名稱</button><button id="showAllLabelsBtn" type="button">全部顯示名稱</button></div><div class="tiny">圖示可直接拖曳移動。選取後修改「圖示倍率」會立即縮放，不必再按套用；也可用「圖示縮小 / 放大」快速調整。</div></div>
+    <div class="prop-row"><label>所屬棟舍</label><input id="building" type="text" placeholder="例如：42床產房 / 妊娠舍"></div>
+    <div class="prop-row"><label id="sourceALabel">來源A / 上游</label><input id="sourceA" type="text" placeholder="例如：地下水井 / 總配電箱"></div>
+    <div class="prop-row"><label>來源B</label><input id="sourceB" type="text" placeholder="三向閥可填第二來源"></div>
+    <div class="prop-row"><label>去向 / 下游</label><input id="target" type="text" placeholder="例如：產房 / 分電箱A"></div>
+    <div id="valveConfig" class="valve-config">
+      <h3>三向閥供水切換設定</h3>
+      <div class="tiny" style="margin-bottom:8px">入口 A / B / C 可各自指定水塔、地下水、自來水；此處也可直接調整三向閥圖示大小（0.2～3.0倍）。</div>
+      <div class="valve-source-row"><b>入口 A</b><input id="valveSourceA" list="waterSourceOptions" placeholder="例如：水塔"></div>
+      <div class="valve-source-row"><b>入口 B</b><input id="valveSourceB" list="waterSourceOptions" placeholder="例如：地下水"></div>
+      <div class="valve-source-row"><b>入口 C</b><input id="valveSourceC" list="waterSourceOptions" placeholder="例如：自來水"></div>
+      <datalist id="waterSourceOptions">
+        <option value="水塔"><option value="地下水"><option value="自來水"><option value="備用水塔"><option value="其他">
+      </datalist>
+      <div class="prop-row"><label>目前供水</label>
+        <select id="valveActivePort"><option value="">未指定</option><option value="A">入口 A</option><option value="B">入口 B</option><option value="C">入口 C</option></select>
+      </div>
+      <div class="prop-row"><label>三向閥大小</label><input id="valveIconScale" type="range" min="0.2" max="3" step="0.1" value="0.8"></div>
+      <div class="prop-row"><label>倍率</label><input id="valveIconScaleNumber" type="number" min="0.2" max="3" step="0.1" value="0.8"></div>
+      <div class="valve-preset">
+        <button id="valveShrinkBtn" type="button">－ 縮小</button>
+        <button id="valveResetSizeBtn" type="button">重設 0.8</button>
+        <button id="valveGrowBtn" type="button">＋ 放大</button>
+      </div>
+      <div class="prop-row"><label>出水去向</label><input id="valveOutlet" type="text" placeholder="例如：全場主幹管 / 產房供水"></div>
+      <div class="prop-row"><label>操作方式</label>
+        <select id="valveMode"><option value="手動">手動</option><option value="電動">電動</option><option value="自動切換">自動切換</option></select>
+      </div>
+      <div class="prop-row"><label>切換備註</label><input id="valveNote" type="text" placeholder="例如：平時水塔，停水改地下水"></div>
+      <div class="valve-preset">
+        <button id="presetTowerGround" type="button">水塔＋地下水</button>
+        <button id="presetTowerCity" type="button">水塔＋自來水</button>
+        <button id="presetAllWater" type="button">三水源全部接入</button>
+      </div>
+      <div id="valveStatus" class="valve-status">尚未設定三向閥。</div>
+      <button id="saveValveBtn" type="button" style="width:100%;margin-top:8px">儲存三向閥設定</button>
+    </div>
+    <div class="prop-row"><label>規格</label><input id="spec" type="text" placeholder="管徑、容量、風扇尺寸、水簾尺寸等"></div>
+    <div class="prop-row advanced-only"><label>管徑 / 線徑</label><input id="lineSize" type="text" placeholder="例如 1.5吋 PVC / 22mm²"></div>
+    <div class="prop-row advanced-only"><label>折線長度</label><input id="routeLength" type="text" readonly placeholder="自動計算"></div><div class="prop-row advanced-only"><label>實際長度</label><input id="realLength" type="text" readonly placeholder="校正比例尺後顯示"></div><div class="prop-row advanced-only"><label>上游電源</label><input id="powerParent" type="text" readonly placeholder="由電線連線自動建立"></div>
+    <div class="prop-row"><label>功率 kW</label><input id="powerKw" type="number" step="0.01" placeholder="例如 1.50"></div>
+    <div class="prop-row advanced-only"><label>風量 m³/h</label><input id="airflow" type="number" step="100" placeholder="例如 35000"></div>
+    <div class="prop-row advanced-only"><label>靜壓 Pa</label><input id="staticPa" type="number" step="1" placeholder="例如 50"></div>
+    <div class="prop-row"><label>緊急等級</label><select id="emergencyClass"><option value="">—</option><option value="A">A級</option><option value="B">B級</option><option value="C">C級</option><option value="none">非備援</option></select></div>
+    <div class="prop-row advanced-only"><label>目前切換</label><select id="switchState"><option value="">—</option><option>水塔</option><option>自來水</option><option>地下水</option></select></div>
+    <div class="prop-row"><label>發電機備援</label><select id="backup"><option value="">—</option><option value="yes">是</option><option value="no">否</option></select></div>
+    <div id="sourceConfig" class="source-config">
+      <h3>緊急電源 / ATS 設定</h3>
+      <div id="generatorFields">
+        <div class="prop-row"><label>發電機 kVA</label><input id="generatorKva" type="number" step="5" min="1" value="125"></div>
+        <div class="prop-row"><label>功率因數 PF</label><input id="generatorPf" type="number" step="0.05" min="0.1" max="1" value="0.8"></div>
+        <div class="prop-row"><label>可用功率</label><input id="generatorCapacityKw" type="text" readonly></div>
+      </div>
+      <div id="atsFields">
+        <div class="prop-row"><label>ATS模式</label><select id="atsMode"><option value="AUTO">AUTO 自動</option><option value="UTILITY">固定台電</option><option value="GENERATOR">固定發電機</option><option value="OFF">OFF</option></select></div>
+        <div class="prop-row"><label>ATS額定</label><input id="atsAmp" type="number" step="10" min="1" placeholder="例如 400"></div>
+        <div class="prop-row"><label>台電來源</label><input id="atsUtilitySourceName" type="text" readonly></div>
+        <div class="prop-row"><label>發電機來源</label><input id="atsGeneratorSourceName" type="text" readonly></div>
+      </div>
+    </div>
+    <div class="prop-row advanced-only"><label>備註</label><textarea id="note"></textarea></div>
+    <button id="applyBtn">儲存設定</button> <button id="deviceMoreBtn" type="button">更多設定</button>
+    <button id="openPanelEditorBtn" class="panel-editor-btn">開啟配電箱內部迴路配置</button>
+    <div class="tiny" style="margin-top:8px">底圖鎖定；後續新增元件可在「選取」模式直接拖移。</div>
+  </div>
+
+  <div id="fieldPhotoSection" class="section cloud-photo-section">
+    <h3>📷 現場照片</h3>
+    <div id="fieldPhotoTarget" class="cloud-photo-target">先選取圖面上的設備或線路。</div>
+    <div class="cloud-photo-actions">
+      <label class="camera-button" for="fieldPhotoInput">拍照 / 選照片</label>
+      <input id="fieldPhotoInput" type="file" accept="image/*" capture="environment" hidden>
+      <button id="fieldPhotoRefreshBtn" type="button">重新整理</button>
+    </div>
+    <div id="fieldPhotoPending" class="cloud-photo-pending">尚未選照片</div>
+    <input id="fieldPhotoNote" type="text" placeholder="照片備註，例如：產房A水簾右側管線">
+    <button id="fieldPhotoUploadBtn" type="button" disabled>上傳到 Google Drive</button>
+    <div id="fieldPhotoList" class="cloud-photo-list"><div class="tiny">雲端連線後會顯示此物件的照片。</div></div>
+  </div>
+
+  <div class="section secondary-info advanced-only"><h3>三向閥視覺狀態</h3><div class="tree">
+    三向閥可設定「水塔／自來水／地下水」。套用後，圖面會用對應顏色加亮目前使用的入口，並在閥體旁顯示目前來源。<br>
+    <b>水塔</b>：藍色｜<b>自來水</b>：橘色｜<b>地下水</b>：綠色
+  </div></div>
+  <div class="section secondary-info"><h3>已放置元件 / 線路</h3><div class="objlist" id="objList"><div class="objrow">尚未新增設備</div></div></div>
+  <div class="section secondary-info advanced-only"><h3>配電箱內部配置 V2.8</h3><div class="tree">
+    選取 <b>總開關箱／總配電箱／分電箱／設備電箱</b> 後，按上方「開啟配電箱內部迴路配置」。V2.8 可上傳現場盤體照片，逐一框選每個開關並記錄功能、作用與用電。主排風扇、導引扇、水簾泵浦可設定段位、啟停溫度、啟動延遲與互鎖條件；右側同步產生控制順序與單線圖。
+  </div></div>
+  <div class="section secondary-info"><h3>電源反查 / 配電拓撲</h3>
+    <div id="powerPath" class="power-path">選取已接電線的風扇、泵浦或電箱，可反查：總開關箱 → 總配電箱 → 分電箱 → 設備。</div>
+    <div class="tiny" style="margin:8px 0 5px">配電樹（點名稱可直接選取圖面元件）</div>
+    <div id="powerTree" class="power-tree">尚未建立電路連線</div>
+  </div>
+  <div class="section secondary-info"><h3>工程統計</h3>
+    <div class="statsgrid">
+      <div class="statbox"><strong id="waterLenStat">0.0 m</strong><span>水線總長</span></div>
+      <div class="statbox"><strong id="elecLenStat">0.0 m</strong><span>電線總長</span></div>
+      <div class="statbox"><strong id="powerStat">0.00 kW</strong><span>設備功率合計</span></div>
+      <div class="statbox"><strong id="backupPowerStat">0.00 kW</strong><span>A+B備援功率</span></div>
+    </div>
+  </div>
+  <div class="section secondary-info"><h3>停電 / 發電機模擬</h3>
+    <div class="emergency-sim">
+      <div class="sim-row"><label>發電機</label><select id="simGenerator"><option value="">自動選第一台</option></select></div>
+      <div class="sim-row"><label>供電級別</label><div class="stage-picks">
+        <label><input id="simA" type="checkbox" checked>A級</label>
+        <label><input id="simB" type="checkbox" checked>B級</label>
+        <label><input id="simC" type="checkbox">C級</label>
+      </div></div>
+      <div class="sim-actions">
+        <button id="simulateOutageBtn" type="button">模擬停電</button>
+        <button id="normalPowerBtn" type="button">恢復正常供電</button>
+      </div>
+      <div id="simResult" class="sim-result">尚未啟動停電模擬。</div>
+    </div>
+  </div>
+  <div class="section secondary-info advanced-only"><h3>配電關係使用方式</h3><div class="tree">
+    <b>台電進線 / 發電機 / ATS</b>：先建立兩個來源接入 ATS，再由 ATS 接總開關箱。ATS 可辨識台電與發電機兩個來源。<br><b>總開關箱</b>：ATS 後的總開關位置。<br>
+    <b>總配電箱</b>：由總開關箱供電，再分出各棟支線。<br>
+    <b>分電箱</b>：設定「上游」為總配電箱或其他分箱；「去向」填棟舍/設備。<br>
+    <b>設備電箱</b>：風扇、水簾泵、抽水泵等單一設備或一組設備使用。<br>
+    <b>主排風扇</b>：預設 A 級緊急負載，可填尺寸、50 Pa風量、馬達功率與上游電箱；V2.2可在配電箱內設定第1/2/3…段啟動。<br>
+    <b>導引扇</b>：可設定所屬棟舍、尺寸、功率與是否列入發電機備援；可設定與主排風扇的啟動互鎖。<br>
+    <b>水簾設備</b>：可填高度、有效長度、厚度與所屬水簾泵；水簾泵浦預設 B 級負載，並可設定「至少1台主排風扇運轉」後才允許啟動。<br><b>保溫燈 / 保溫設備</b>：可在圖面放置保溫燈群組，也可直接在配電箱內建立保溫燈控制迴路；可記錄溫控器、定時器、接觸器、設定溫度與手/自動模式。<br><b>折線水路</b>：逐點點擊，Enter/雙擊完成；黃色端點可拖曳微調；可吸附到元件。<br><b>電線拓撲</b>：請從上游電箱開始畫到下游設備，端點吸附後系統會自動建立配電關係並可反查電源路徑。
+  </div></div>
+</div>
+</div>
+
+<div id="cloudModal" class="cloud-modal-backdrop" aria-hidden="true">
+  <div class="cloud-modal-card" role="dialog" aria-modal="true" aria-labelledby="cloudModalTitle">
+    <div class="cloud-modal-head">
+      <div><h2 id="cloudModalTitle">☁ 雲端同步</h2><div class="tiny">GitHub Pages ↔ Google Apps Script ↔ Google Sheet / Drive</div></div>
+      <button id="cloudCloseBtn" type="button">✕</button>
+    </div>
+    <div class="cloud-modal-body">
+      <div class="cloud-field"><label>Apps Script Web App URL</label><input id="cloudEndpoint" type="url" placeholder="https://script.google.com/macros/s/.../exec"></div>
+      <div class="cloud-field"><label>專案 Token</label><input id="cloudToken" type="password" placeholder="從 Google Sheet 的 Settings 工作表複製"></div>
+      <div class="cloud-grid2">
+        <div class="cloud-field"><label>雲端專案 ID</label><input id="cloudProjectId" type="text" value="huwei-pigfarm-main"></div>
+        <div class="cloud-field"><label>裝置名稱</label><input id="cloudDeviceName" type="text" placeholder="例如：現場 iPad"></div>
+      </div>
+      <label class="cloud-check"><input id="cloudAutoSync" type="checkbox"> 本機修改後自動同步（約 8 秒後）</label>
+      <div class="cloud-kpis">
+        <div><b id="cloudRevision">0</b><span>雲端版本</span></div>
+        <div><b id="cloudLastSync">尚未同步</b><span>最後同步</span></div>
+        <div><b id="cloudProjectSize">—</b><span>目前專案大小</span></div>
+      </div>
+      <div id="cloudMessage" class="cloud-message">尚未設定雲端連線。</div>
+      <div class="cloud-actions-row"><button id="cloudSaveConfigBtn" type="button">儲存連線設定</button><button id="cloudTestBtn" type="button">測試連線</button></div>
+      <div class="cloud-actions-row"><button id="cloudPushBtn" class="cloud-primary" type="button">↑ 上傳目前專案</button><button id="cloudPullBtn" type="button">↓ 下載雲端專案</button></div>
+      <div class="cloud-links"><button id="cloudOpenSheetBtn" type="button" disabled>開啟 Google Sheet</button><button id="cloudOpenFolderBtn" type="button" disabled>開啟照片資料夾</button></div>
+      <div class="cloud-help"><b>現場使用：</b>手機 / iPad 可先本機繪圖；有網路再同步。照片壓縮後上傳 Google Drive，Google Sheet 記錄照片與專案版本。</div>
+    </div>
+  </div>
+</div>
+
+<div id="panelEditorModal" class="modal-backdrop" aria-hidden="true">
+  <div class="modal-card" data-panel-tab="meta">
+    <div class="modal-head">
+      <h2 id="panelEditorTitle">配電箱內部迴路配置</h2>
+      <div class="mh-actions"><button id="panelAutoBtn">從圖面自動建立迴路</button><button id="panelCloseTopBtn">關閉</button></div>
+    </div>
+    <div class="panel-editor-tabs">
+      <button id="panelTabMeta" class="active" type="button">基本</button>
+      <button id="panelTabPhoto" type="button">照片 <span id="panelPhotoCountBadge" class="tab-badge">0</span></button>
+      <button id="panelTabCircuits" type="button">迴路 <span id="panelCircuitCountBadge" class="tab-badge">0</span></button>
+      <button id="panelTabPreview" type="button">結果</button>
+    </div>
+    <div class="modal-body panel-tabbed">
+      <div class="panel-form">
+        <div class="panel-tab-help" data-panel-view="meta">先設定盤體名稱、電壓、相別與主開關。V3.3 已修正分頁按鈕被撐成整頁高度的版面問題。</div><div class="panel-meta-grid" data-panel-view="meta">
+          <div class="box"><label>盤體名稱</label><input id="pmPanelName" type="text"></div>
+          <div class="box"><label>供電電壓</label><select id="pmVoltage"><option>380V</option><option>220V</option><option>110/220V</option><option>其他</option></select></div>
+          <div class="box"><label>系統</label><select id="pmPhase"><option>3相4線</option><option>3相3線</option><option>單相3線</option><option>單相2線</option></select></div>
+          <div class="box"><label>母排額定</label><input id="pmBusbar" type="text" placeholder="例如 225A"></div>
+          <div class="box"><label>主開關類型</label><select id="pmMainType"><option>MCCB</option><option>NFB</option><option>ELCB</option><option>隔離開關</option><option>其他</option></select></div>
+          <div class="box"><label>主開關安培</label><input id="pmMainAmp" type="number" min="0" step="1" placeholder="例如 200"></div>
+          <div class="box"><label>主開關極數</label><select id="pmMainPoles"><option>4P</option><option>3P</option><option>2P</option><option>1P</option></select></div>
+          <div class="box"><label>上游來源</label><input id="pmUpstream" type="text" readonly placeholder="由拓撲自動帶入"></div>
+        </div>
+        <div class="panel-tab-help" data-panel-view="photo">拍好現場配電箱後，在照片上標記每一個斷路器。標記本身會直接顯示「開關編號＋主要作用」；點擊標記會在照片旁展開詳細資訊視窗。</div><div class="panel-photo-section" data-panel-view="photo">
+          <div class="panel-photo-head">
+            <div>
+              <h3>📷 配電箱實體照片與電路開關標註</h3>
+              <div class="tiny">拍攝現場配電箱後，可在照片上逐一框選斷路器，標示它控制什麼、作用、供電設備，以及額定／實測用電。</div>
+            </div>
+            <div class="panel-photo-actions">
+              <input id="panelPhotoInput" type="file" accept="image/*" style="display:none">
+              <button id="panelPhotoUploadBtn" type="button">📷 上傳 / 更換照片</button>
+              <button id="panelPhotoClearBtn" type="button">移除照片</button>
+            </div>
+          </div>
+          <div class="photo-marker-toolbar">
+            <button id="photoToolAddBtn" class="primary" type="button">＋ 新增標記</button>
+            <button id="photoToolBoxBtn" type="button">▭ 框選開關</button>
+            <button id="photoToolMoveBtn" type="button">✋ 移動 / 調整</button>
+            <button id="photoToolDeleteBtn" type="button">🗑 刪除選取</button>
+            <button id="photoToolDoneBtn" type="button">✓ 完成</button>
+            <span class="hint">上傳照片後：按「＋新增標記」直接點開關位置；或按「▭框選開關」拖曳框住整顆斷路器。</span>
+          </div>
+          <div id="photoToolStatus" class="photo-tool-status">目前：瀏覽模式。點照片上的標記可查看細項。</div>
+          <div class="photo-autosave-note">照片與照片標註會即時自動保存，不必切換分頁前另外按儲存。</div>
+          <div id="panelPhotoStage" class="panel-photo-stage">
+            <div id="panelPhotoPlaceholder" class="panel-photo-placeholder">尚未上傳配電箱實體照片。</div>
+            <img id="panelPhotoImg" alt="配電箱實體照片" style="display:none">
+            <div id="panelPhotoOverlay" class="panel-photo-overlay"></div>
+          </div>
+          <div class="photo-editor-grid">
+            <div class="box"><label>開關 / 迴路編號</label><input id="photoMarkId" type="text" list="panelCircuitIdList" placeholder="例如 QF1"><datalist id="panelCircuitIdList"></datalist></div>
+            <div class="box"><label>開關功能</label><input id="photoMarkFunction" type="text" placeholder="例如 產房A主排風扇1"></div>
+            <div class="box"><label>作用 / 控制內容</label><input id="photoMarkPurpose" type="text" placeholder="例如 高溫第1段啟動排風"></div>
+            <div class="box"><label>供電設備 / 區域</label><input id="photoMarkLoad" type="text" placeholder="例如 產房A / FAN-01"></div>
+            <div class="box"><label>額定功率 kW</label><input id="photoMarkRatedKw" type="number" step="0.01" min="0"></div>
+            <div class="box"><label>實測電流 A</label><input id="photoMarkMeasuredA" type="number" step="0.01" min="0"></div>
+            <div class="box"><label>實測功率 kW</label><input id="photoMarkMeasuredKw" type="number" step="0.01" min="0"></div>
+            <div class="box"><label>累積 / 日用電 kWh</label><input id="photoMarkKwh" type="number" step="0.01" min="0"></div>
+            <div class="box"><label>開關規格</label><input id="photoMarkBreaker" type="text" placeholder="例如 MCB 3P 20A"></div>
+            <div class="box"><label>標記圖示</label><select id="photoMarkIconType">
+              <option value="breaker">電路開關</option><option value="exhaustFan">主排風扇</option>
+              <option value="guideFan">導引扇</option><option value="coolingPump">水簾泵浦</option>
+              <option value="heatLamp">保溫燈</option><option value="lighting">照明</option>
+              <option value="socket">插座</option><option value="motor">馬達 / 泵浦</option>
+              <option value="ats">ATS</option><option value="generator">發電機</option><option value="other">其他</option>
+            </select></div>
+            <div class="box"><label>照片顯示用電</label><select id="photoMarkShowPower"><option value="yes">顯示 kW / A</option><option value="no">不顯示</option></select></div>
+            <div class="box"><label>從哪邊接過來</label><input id="photoMarkFrom" type="text" placeholder="例如 ATS / 上游總配電箱 / QF3"></div>
+            <div class="box"><label>可以接到哪裡去</label><input id="photoMarkTo" type="text" placeholder="例如 產房A風扇 / 次分電箱"></div>
+            <div class="box" style="grid-column:1 / -1"><label>其他細項內容</label><input id="photoMarkDetail" type="text" placeholder="例如 第2排第4顆、備用開關、待追線確認"></div>
+            <div class="box"><label>緊急級別</label><select id="photoMarkEmergency"><option value="">—</option><option>A</option><option>B</option><option>C</option><option value="none">非備援</option></select></div>
+            <div class="box"><label>發電機備援</label><select id="photoMarkBackup"><option value="">—</option><option value="yes">是</option><option value="no">否</option></select></div>
+            <div class="box"><label>備註</label><input id="photoMarkNote" type="text" placeholder="例如 現場貼紙已褪色 / 待確認"></div>
+          </div>
+          <div class="panel-photo-actions" style="margin-top:8px">
+            <button id="photoMoreFieldsBtn" type="button">更多欄位</button>
+            <button id="panelPhotoAddMarkBtn" type="button" style="display:none">＋ 框選開關</button>
+            <button id="photoLoadFromCircuitBtn" type="button">從迴路表帶入</button>
+            <button id="photoSaveMarkBtn" type="button">儲存此標註</button>
+            <button id="photoSyncCircuitBtn" type="button">同步回迴路表</button>
+            <button id="photoDeleteMarkBtn" type="button">刪除此標註</button>
+          </div>
+          <div id="photoMarkSummary" class="photo-mark-summary">尚未選取照片上的開關標註。</div>
+        </div>
+
+        <div class="panel-tab-help" data-panel-view="circuits">這一頁專門管理 QF1、QF2… 分路。保溫燈與通風分段也在這裡建立。</div><div class="circuit-tools" data-panel-view="circuits">
+          <button id="panelAddCircuitBtn">＋ 分路</button><button id="panelAddHeatBtn">☀ 保溫</button><button id="panelAddHeatGroupBtn">☀☀ 保溫分組</button><button id="panelAddVentStageBtn">🌬 通風分段</button>
+          <button id="panelRenumberBtn">重新編號</button>
+          <button id="panelClearCircuitsBtn">清空分路</button>
+          <span class="tiny">保溫燈可單迴路或依產房分組建立。通風設備可一鍵建立分段控制：主排風扇 → 導引扇 → 水簾泵浦，並可設定啟停溫度、延遲秒數與互鎖。實際接線、接觸器與環控器邏輯仍需依現場盤體確認。</span>
+        </div>
+        <div class="circuit-table-wrap" data-panel-view="circuits">
+          <table class="circuit-table">
+            <thead><tr><th>迴路</th><th>區域/群組</th><th>開關類型</th><th>極數</th><th>安培A</th><th>相別</th><th>線徑</th><th>對應設備/負載</th><th>單盞W</th><th>燈數</th><th>kW</th><th>控制模式</th><th>通風段位</th><th>啟動°C</th><th>停止°C</th><th>延遲s</th><th>互鎖條件</th><th>保溫設定°C</th><th>回差°C</th><th>接觸器/控制器</th><th>緊急級別</th><th>發電備援</th><th>備註</th><th>刪除</th></tr></thead>
+            <tbody id="panelCircuitBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel-preview" data-panel-view="preview"><div class="panel-tab-help">這一頁只看結果：分路數、總負載、A+B備援、通風控制順序與自動單線圖。</div>
+        <div class="panel-kpis">
+          <div class="panel-kpi"><strong id="pkCircuitCount">0</strong><span>分路數</span></div>
+          <div class="panel-kpi"><strong id="pkTotalKw">0.00</strong><span>負載合計 kW</span></div>
+          <div class="panel-kpi"><strong id="pkBackupKw">0.00</strong><span>A+B備援 kW</span></div><div class="panel-kpi"><strong id="pkControlledHeat">0</strong><span>自動保溫迴路</span></div><div class="panel-kpi"><strong id="pkHeatLamps">0</strong><span>保溫燈總數</span></div><div class="panel-kpi"><strong id="pkHeatKw">0.00</strong><span>保溫燈 kW</span></div><div class="panel-kpi"><strong id="pkVentAuto">0</strong><span>自動通風迴路</span></div><div class="panel-kpi"><strong id="pkVentStageMax">0</strong><span>最高通風段位</span></div>
+        </div>
+        <div class="sld-title">通風控制順序</div><div id="ventSequence" class="vent-sequence"><div class="tiny">尚未設定通風分段控制。</div></div><div class="sld-title">自動單線圖（示意）</div>
+        <div id="panelSld" class="sld"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div class="summary" id="panelFootSummary">尚未編輯</div>
+      <div><button id="panelCancelBtn">關閉</button> <button id="panelSaveBtn">儲存變更</button> <button id="panelSaveCloseBtn">儲存並關閉</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="./assets/js/app-core.js"></script>
+
+<script src="./assets/js/app-ui.js"></script>
+
+
+<script src="./assets/js/pwa-register.js"></script>
+
+</body></html>

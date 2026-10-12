@@ -1,0 +1,24 @@
+{
+  "name": "虎尾場 2D CAD 配置系統 V6.9.1",
+  "short_name": "虎尾場CAD",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1b2228",
+  "theme_color": "#151c22",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "./assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
