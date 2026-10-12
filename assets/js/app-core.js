@@ -422,17 +422,38 @@ function cloneComponentAt(source,p){
  status.textContent='已複製：'+clone.dataset.name;return clone;
 }
 const BUILDING_FOCUS={
- farrowingA:{label:'產房A 42床',x:70,y:38,w:615,h:300},
- farrowingB:{label:'產房B 36床',x:68,y:194,w:575,h:330},
+ farrowingA:{
+   label:'產房A 42床',
+   points:[[157,38],[680,134],[646,333],[127,214]]
+ },
+ farrowingB:{
+   label:'產房B 36床',
+   points:[[127,214],[646,333],[610,519],[126,407]]
+ },
  farrowingC:{
    label:'產房C 36床',
    points:[[739,137],[1197,242],[1157,446],[700,338]]
  },
- farrowingD:{label:'產房D 36床',x:686,y:303,w:466,h:322},
- boar:{label:'公豬舍',x:154,y:536,w:444,h:141},
- giltBreeding:{label:'新女豬育成區 / 配種區',x:82,y:662,w:1050,h:184},
- gestationUpper:{label:'妊娠舍（上棟）',x:82,y:833,w:1050,h:176},
- gestationLower:{label:'妊娠舍（下棟）',x:82,y:1045,w:1050,h:141}
+ farrowingD:{
+   label:'產房D 36床',
+   points:[[700,338],[1157,446],[1110,645],[625,520]]
+ },
+ boar:{
+   label:'公豬舍',
+   points:[[233,523],[590,523],[590,657],[233,657]]
+ },
+ giltBreeding:{
+   label:'新女豬育成區 / 配種區',
+   points:[[158,666],[1092,666],[1092,806],[158,806]]
+ },
+ gestationUpper:{
+   label:'妊娠舍（上棟）',
+   points:[[159,824],[1095,824],[1095,972],[159,972]]
+ },
+ gestationLower:{
+   label:'妊娠舍（下棟）',
+   points:[[158,1024],[1097,1024],[1097,1181],[158,1181]]
+ }
 };
 function buildingFocusBounds(box){
  if(Array.isArray(box?.points)&&box.points.length){
@@ -997,7 +1018,7 @@ qs('valveResetSizeBtn').onclick=()=>setValveScale(0.8,true);
 qs('clearUserBtn').onclick=()=>{if(confirm('清除所有後續新增的水線、電線、設備與註記？')){document.querySelectorAll('[data-user="1"]').forEach(n=>n.remove());fill(null);autosave();refreshList()}};
 function serialize(){return [...document.querySelectorAll('[data-user="1"]')].map(el=>({parent:el.parentElement.id,svg:new XMLSerializer().serializeToString(el)}))}
 function dl(fn,content,type){const b=new Blob([content],{type});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=fn;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
-function exportData(){return{version:'6.9.2',zoom,pan,scaleFactor,customLibrary:getCustomLibrary(),elements:serialize()}}
+function exportData(){return{version:'6.9.3',zoom,pan,scaleFactor,customLibrary:getCustomLibrary(),elements:serialize()}}
 qs('saveBtn').onclick=()=>dl('pigfarm_cad_project_v18.json',JSON.stringify(exportData(),null,2),'application/json');qs('loadBtn').onclick=()=>qs('loadInput').click();qs('loadInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;loadData(JSON.parse(await f.text()));};
 
 function sanitizeObsoleteOverlayArtifacts(){
@@ -1019,7 +1040,7 @@ function sanitizeObsoleteOverlayArtifacts(){
 const CLOUD_CFG_KEY='pigfarmCloudCfgV1';
 let cloudPushTimer=null,cloudApplyingRemote=false,cloudBusy=false,pendingFieldPhoto=null,cloudSheetUrl='',cloudFolderUrl='',cloudPullArmed=false;
 function defaultDeviceName(){const ua=navigator.userAgent||'';if(/iPad/i.test(ua)||(/Macintosh/i.test(ua)&&navigator.maxTouchPoints>1))return'現場 iPad';if(/iPhone/i.test(ua))return'現場 iPhone';if(/Android/i.test(ua))return'現場 Android';return'現場電腦'}
-function loadCloudConfig(){let c={endpoint:'',token:'',projectId:'huwei-pigfarm-main',deviceName:defaultDeviceName(),autoSync:false,revision:0,lastSynced:'',pendingCount:0};try{const s=JSON.parse(localStorage.getItem(CLOUD_CFG_KEY)||'{}');c={...c,...s}}catch(e){}return c}
+function loadCloudConfig(){const defaultEndpoint='https://script.google.com/macros/s/AKfycbwNUOGoY0j-XRQpBJ7YODl_nangQzSKZa2GfHmXXZVC7bP2r9suQtgjYvGe690sid1X/exec';let c={endpoint:defaultEndpoint,token:'',projectId:'huwei-pigfarm-main',deviceName:defaultDeviceName(),autoSync:false,revision:0,lastSynced:'',pendingCount:0};try{const s=JSON.parse(localStorage.getItem(CLOUD_CFG_KEY)||'{}');c={...c,...s};if(!String(c.endpoint||'').trim())c.endpoint=defaultEndpoint}catch(e){}return c}
 let cloudConfig=loadCloudConfig();
 function saveCloudConfig(){try{localStorage.setItem(CLOUD_CFG_KEY,JSON.stringify(cloudConfig))}catch(e){}updateCloudUi()}
 function cloudConfigured(){return!!(cloudConfig.endpoint&&cloudConfig.token&&cloudConfig.projectId)}

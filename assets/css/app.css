@@ -831,3 +831,64 @@ body.duplicate-place-mode #svg{cursor:copy}
     font-size:12px;
   }
 }
+
+
+/* V6.9.3 左側工具欄字體統一放大 */
+aside{
+  font-size:13px;
+}
+aside .section h3{
+  font-size:15px!important;
+  line-height:1.35;
+}
+aside .sidebar-tabs button{
+  font-size:13px!important;
+  font-weight:700;
+}
+aside button,
+aside select,
+aside input,
+aside textarea{
+  font-size:13px!important;
+  line-height:1.35;
+}
+aside .toolgrid button,
+aside .filter-preset-grid button,
+aside .device-filter-head button,
+aside .custom-library-create,
+aside .custom-library-chip{
+  font-size:13px!important;
+}
+aside .prop-row label,
+aside .device-filter-head,
+aside .layer-row,
+aside .libitem,
+aside .objrow,
+aside .notice,
+aside .tiny,
+aside .compact-hint{
+  font-size:12.5px!important;
+}
+aside .device-filter-chip{
+  font-size:12px!important;
+  min-height:34px;
+}
+aside .device-filter-chip b{
+  font-size:11px!important;
+}
+aside .libitem{
+  padding:9px 6px;
+}
+aside .badge{
+  font-size:11px!important;
+}
+@media(max-width:1100px){
+  aside .section h3{font-size:15px!important}
+  aside button,
+  aside select,
+  aside input,
+  aside textarea{font-size:13px!important}
+  aside .prop-row label,
+  aside .tiny,
+  aside .libitem{font-size:12.5px!important}
+}

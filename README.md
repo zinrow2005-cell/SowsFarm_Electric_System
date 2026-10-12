@@ -1,4 +1,4 @@
-# 虎尾場 2D CAD 配置系統 V6.9.2
+# 虎尾場 2D CAD 配置系統 V6.9.3
 
 這個資料夾就是 **GitHub Pages 上傳版**。
 
@@ -23,7 +23,7 @@
 │  └─ icons/
 └─ docs/
    ├─ CLOUD_SETUP.md
-   └─ V6.9.2_FULL_QA.md
+   └─ V6.9.3_FULL_QA.md
 ```
 
 ## GitHub Pages
@@ -52,5 +52,13 @@
 3. 必要時清除該網站資料，讓新版 Service Worker 重新快取。
 
 
-## V6.9.2
+## V6.9.3
 修正產房 C 精準定位；棟舍選單移除浴室2；放大棟舍選單字體。
+
+
+## V6.9.3
+- 全部棟舍比照產房 C 改用 CAD 多邊形定位。
+- 左側工具欄字體統一放大。
+- 預設 Apps Script endpoint 已設定為：
+  `https://script.google.com/macros/s/AKfycbwNUOGoY0j-XRQpBJ7YODl_nangQzSKZa2GfHmXXZVC7bP2r9suQtgjYvGe690sid1X/exec`
+- PROJECT_TOKEN 仍不會寫入 GitHub。
