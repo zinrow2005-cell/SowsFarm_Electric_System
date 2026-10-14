@@ -61,7 +61,7 @@
   $('mobileRightClose')?.addEventListener('click',()=>{body.classList.remove('mobile-right-open');refreshPanelButtons()});
 
   // 點設備庫後自動回常用工具，減少來回尋找；拖曳不影響。
-  document.querySelectorAll('.libitem').forEach(el=>el.addEventListener('click',()=>{if(simple)setTimeout(()=>setLeftTab('common'),50);if(mobileUi()){setTimeout(()=>{body.classList.remove('mobile-left-open');refreshPanelButtons()},60)}}));
+  document.querySelectorAll('.libitem').forEach(el=>el.addEventListener('click',()=>{/* 設備點選後保留在設備分頁，方便再次選擇 */if(mobileUi()){setTimeout(()=>{body.classList.remove('mobile-left-open');refreshPanelButtons()},60)}}));
 
   // 選取圖面物件時，右側自動回「目前設備」。
   document.getElementById('svg')?.addEventListener('pointerdown',()=>{if(simple)setRightTab('basic')},{capture:true});

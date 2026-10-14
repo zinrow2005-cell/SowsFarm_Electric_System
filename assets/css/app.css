@@ -892,3 +892,535 @@ aside .badge{
   aside .tiny,
   aside .libitem{font-size:12.5px!important}
 }
+
+
+/* V6.9.24 設定介面重設 */
+.settings-redesign{padding:12px;background:linear-gradient(180deg,#202a33 0%,#1d2730 100%);border-color:#415464}
+.settings-redesign .section-headline{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.settings-redesign .section-headline h3{margin:0;font-size:15px}
+.settings-redesign .section-subtitle{margin-top:3px;color:#9fb4c2;font-size:11px;line-height:1.55}
+.settings-redesign .section-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border-radius:999px;background:#173d5b;border:1px solid #4aaee1;color:#dff3ff;font-size:11px;white-space:nowrap}
+.settings-redesign .settings-card{background:#182128;border:1px solid #374958;border-radius:10px;padding:10px}
+.settings-redesign .settings-card.compact{padding:9px}
+.settings-grid.two-col{display:grid;grid-template-columns:1fr;gap:9px}
+.settings-redesign .setting-field{background:#131c23;border:1px solid #31424f;border-radius:9px;padding:9px}
+.settings-redesign .setting-field label{display:block;font-size:12px;color:#d7e7f2;font-weight:700;margin-bottom:6px}
+.settings-redesign .setting-field small{display:block;margin-top:5px;font-size:11px;color:#90a5b3;line-height:1.5}
+.settings-redesign .status-input{background:#102533;border-color:#30698e;color:#dff3ff;font-weight:700}
+.settings-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+.settings-actions button{min-height:38px;font-weight:700}
+.hint-card{margin-top:10px;padding:9px 10px;border-radius:8px;background:#112c3f;border:1px solid #315f80;color:#d9eeff;display:grid;gap:4px;font-size:11px;line-height:1.55}
+.hint-card b{font-size:12px}
+.setting-group-block{background:#131c23;border:1px solid #31424f;border-radius:9px;padding:8px 9px;margin-bottom:9px}
+.group-title{font-size:12px;font-weight:700;color:#eef6ff;margin-bottom:7px;letter-spacing:.5px}
+.setting-toggle{display:flex;align-items:flex-start;gap:9px;padding:7px 2px;margin:0;border-bottom:1px dashed #2b3945}
+.setting-toggle:last-of-type{border-bottom:0}
+.setting-toggle input{margin-top:3px;accent-color:var(--accent);transform:scale(1.08)}
+.toggle-copy{display:block;line-height:1.45}
+.toggle-copy b{display:block;font-size:12px;color:#f1f7ff;font-weight:700}
+.toggle-copy small{display:block;font-size:11px;color:#8ea4b2;margin-top:2px}
+.settings-note{margin-top:8px}
+body.simple-ui .settings-redesign{padding:10px}
+body.simple-ui .settings-redesign .section-headline h3{font-size:14px}
+body.simple-ui .settings-redesign .section-subtitle{font-size:10px}
+body.simple-ui .settings-redesign .section-badge{font-size:10px;padding:3px 7px}
+body.simple-ui .settings-redesign .setting-field{padding:8px}
+body.simple-ui .settings-redesign .setting-field label{font-size:11px}
+body.simple-ui .settings-redesign .setting-field small,.toggle-copy small,.hint-card{font-size:10px}
+body.simple-ui .settings-actions button{min-height:36px;padding:7px 6px}
+@media (min-width:900px){.settings-grid.two-col{grid-template-columns:1fr 1fr}}
+
+/* V6.9.25: 操作 / 設備 / 設定一致化；不涉及 CAD 底圖 */
+.sidebar-tabs{gap:6px;padding:5px 0 12px;border-bottom:1px solid #405360;margin-bottom:12px;position:sticky;top:0;background:#242e37;z-index:24}
+.sidebar-tabs button{min-height:42px;border:1px solid #43596a;border-radius:9px;background:#202b34;font-size:14px!important;font-weight:700;letter-spacing:.03em;transition:background .15s ease,border-color .15s ease}
+.sidebar-tabs button.active{background:#154761;border-color:#58b8ee;box-shadow:inset 0 -3px #54c4ff;color:#fff}
+aside .section[data-ui-group]{border:1px solid #3f5260;border-radius:13px;box-shadow:0 3px 12px rgba(0,0,0,.08);padding:12px;margin-bottom:11px}
+aside .section h3{font-size:15px!important;line-height:1.4;margin-bottom:10px}
+aside .section button{min-height:39px;white-space:normal;line-height:1.35}
+aside .prop-row{display:grid;grid-template-columns:minmax(0,1fr);gap:5px}
+aside .prop-row label{font-size:13px!important;font-weight:600;color:#c3d6e6}
+aside input:not([type=checkbox]),aside select{min-height:41px;font-size:14px!important;max-width:100%}
+aside .setting-toggle{min-height:52px;padding:8px 4px;align-items:center;cursor:pointer}
+aside .setting-toggle input{width:18px;height:18px;flex:0 0 18px;transform:none;margin:0}
+aside .setting-toggle .toggle-copy b{font-size:13px}
+aside .setting-toggle .toggle-copy small{font-size:11px;line-height:1.45}
+.settings-redesign .section-headline{display:block}
+.settings-redesign .section-badge{display:none}
+.settings-redesign .settings-card{padding:9px}
+.settings-redesign .section-subtitle{font-size:12px}
+.settings-redesign .settings-grid.two-col{grid-template-columns:minmax(0,1fr)}
+.settings-redesign .settings-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+.settings-redesign .settings-actions button{overflow-wrap:anywhere;font-size:12px}
+.settings-redesign .setting-field label{font-size:13px}
+.settings-redesign .setting-field small{font-size:11px}
+.settings-redesign .hint-card{font-size:12px}
+.settings-redesign .settings-note{font-size:12px}
+body.simple-ui .settings-redesign .section-headline h3{font-size:15px!important}
+body.simple-ui .settings-redesign .setting-field label{font-size:12px}
+body.simple-ui .settings-redesign .section-subtitle{font-size:11px}
+body.simple-ui .settings-redesign .setting-field small,body.simple-ui .settings-redesign .hint-card{font-size:11px}
+body.simple-ui .settings-redesign .setting-toggle b{font-size:13px}
+body.simple-ui .settings-redesign .setting-toggle small{font-size:11px}
+body.simple-ui .sidebar-tabs button{font-size:13px!important}
+@media (max-width:650px){.sidebar-tabs button{min-height:44px}.settings-redesign .settings-actions{grid-template-columns:1fr}}
+
+/* 設定頁圖層快速控制（V6.9.26） */
+.layer-quick-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:0 0 7px}
+.layer-quick-actions button{padding:9px 2px;font-size:11px;min-height:38px;border:1px solid #466177;background:#22394a;color:#ecf7ff;font-weight:700;border-radius:8px;white-space:normal}
+.layer-quick-actions button:focus-visible{outline:2px solid #7dd0ff;outline-offset:2px}
+.layer-quick-actions button:hover{background:#284e68}
+.layer-state-label{font-size:11px;line-height:1.5;color:#acc2d3;margin:3px 0 8px}
+.settings-redesign .setting-toggle{min-height:50px;align-items:center;cursor:pointer}
+.settings-redesign .setting-toggle input{width:18px;height:18px;flex:0 0 18px}
+@media(max-width:600px){.layer-quick-actions button{min-height:44px;font-size:12px}}
+
+/* V6.9.27 設備分組與搜尋 */
+.equipment-library-panel{background:linear-gradient(145deg,#1b3444,#202b36);border-color:#47657a}
+.eq-head{display:grid;gap:4px;margin-bottom:11px}.eq-head h3{font-size:16px!important;margin:0!important}.eq-head span,.eq-search-label{font-size:12px;color:#a9c4d7}
+.eq-search-label{display:block;margin-bottom:5px}.equipment-library-panel input[type="search"]{width:100%;min-height:39px;font-size:14px;background:#111e29;color:#f3faff;border-color:#47657a}
+.eq-categories{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:10px 0}.eq-categories button{min-height:40px;padding:8px 4px;font-size:13px;font-weight:700}.eq-categories button.active{background:#185a7d;border-color:#61bbed;color:#fff;box-shadow:inset 0 0 0 1px #61bbed}
+.eq-summary{min-height:23px;color:#a7cce1;font-size:12px;line-height:1.6}
+.eq-library-sections .section[data-eq-section]{border-color:#384d5c}.eq-library-sections .libitem{min-height:65px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;line-height:1.35;gap:2px;touch-action:auto}
+.eq-library-sections .libitem .ico{font-size:21px}.eq-library-sections [hidden],.eq-library-sections .libitem[hidden]{display:none!important}
+body.simple-ui aside[data-active-group="library"] .eq-library-sections .section[data-ui-group="library"]{display:block}
+@media (max-width:680px){.eq-categories{grid-template-columns:repeat(3,minmax(0,1fr))}.eq-library-sections .libitem{min-height:70px}}
+
+/* V6.9.28 手機工具列與右側設定可讀性 */
+.mobile-cad-dock{display:none}
+.right .primary-properties .prop-row label{line-height:1.45;overflow-wrap:anywhere}
+.right .primary-properties input,.right .primary-properties select,.right .primary-properties textarea{min-width:0;max-width:100%}
+.right .primary-properties button{min-height:38px}
+@media(max-width:820px){
+.mobile-cad-dock{position:fixed;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;bottom:0;left:0;right:0;z-index:1290;background:#18232c;border-top:1px solid #466276;padding:6px 6px max(6px,env(safe-area-inset-bottom));box-shadow:0 -4px 18px rgba(0,0,0,.36)}
+.mobile-cad-dock button{padding:9px 2px;min-height:42px;font-size:12px;font-weight:700;border-radius:8px;white-space:nowrap}
+.mobile-cad-dock button.active{background:#12567a;border-color:#63c6ff;color:white}
+.mobile-cad-dock button:focus-visible{outline:2px solid #9be1ff;outline-offset:1px}
+.canvas-toolbar{top:7px;flex-wrap:nowrap;overflow-x:auto;max-width:calc(100% - 90px);scrollbar-width:thin;padding-bottom:4px}
+.canvas-toolbar button{flex:0 0 auto;min-height:34px}
+aside,.right{bottom:60px!important;padding-bottom:18px!important}
+.right .primary-properties .prop-row{grid-template-columns:minmax(0,1fr);gap:5px;margin-bottom:10px}
+.right .primary-properties .prop-row label{font-size:13px!important}
+.right .primary-properties input,.right .primary-properties select,.right .primary-properties textarea{min-height:41px;font-size:14px}
+.right .right-tabs button{min-height:42px;font-size:13px}
+.status{bottom:70px}
+}
+
+/* 第6.9.29版：設備設定精簡與觸控可讀性 */
+.primary-properties .device-editor-guide{display:grid;gap:4px;padding:11px 12px;margin:2px 0 12px;background:#142b39;border:1px solid #395f75;border-radius:10px;line-height:1.5}
+.device-editor-guide strong{font-size:14px;color:#ebf8ff}.device-editor-guide span{font-size:12px;color:#b1c9d7}
+.primary-properties .device-group-head{display:flex;justify-content:space-between;align-items:center;padding:9px 3px;margin:9px 0 7px;border-bottom:1px solid #3c5464;font-size:14px;font-weight:700;color:#e6f5ff}
+.device-group-head span{font-size:11px;color:#8fc5e9;font-weight:500}
+.device-editor-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.device-editor-actions button{min-height:43px;padding:9px 5px;font-weight:700}
+.device-editor-actions #applyBtn{margin:0!important;width:auto!important;background:#165477;border-color:#4aa9e0}
+.device-editor-actions #deviceMoreBtn{display:inline-flex;align-items:center;justify-content:center;background:#293a48}
+.device-advanced-description{font-size:11px;line-height:1.5;color:#a2b9c8;margin:8px 0 10px}
+body.simple-ui .primary-properties .device-advanced-row,body.simple-ui .primary-properties .device-advanced-head{display:none!important}
+body.simple-ui.device-more-open .primary-properties .device-advanced-row{display:grid!important}
+body.simple-ui.device-more-open .primary-properties .device-advanced-row.prop-actions{display:flex!important}
+body.simple-ui.device-more-open .primary-properties .device-advanced-head{display:flex!important}
+.primary-properties input,.primary-properties select,.primary-properties textarea{min-height:38px;font-size:14px}
+.primary-properties .prop-row label{font-size:12px;line-height:1.4}
+@media(max-width:650px){.device-editor-actions button{min-height:46px}.primary-properties .prop-row{grid-template-columns:92px minmax(0,1fr);gap:8px}.primary-properties input,.primary-properties select{font-size:16px}}
+
+/* V6.9.32 歷史版本管理 */
+.history-manager-dialog[hidden]{display:none!important}.history-manager-dialog{position:fixed;inset:0;z-index:1500;background:rgba(6,14,20,.82);display:flex;align-items:center;justify-content:center;padding:14px}
+.history-manager-card{background:#202b35;border:1px solid #587287;border-radius:14px;padding:17px;width:min(600px,96vw);max-height:85vh;overflow-y:auto;box-shadow:0 18px 60px #0008}
+.history-manager-header{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:18px}
+.history-manager-card p{font-size:13px;color:#b5c9d6;line-height:1.6}
+.history-manager-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.history-manager-list{display:grid;gap:8px}.history-entry{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #455b6b;background:#18232c;border-radius:9px;padding:11px}
+.history-entry-info{display:grid;gap:3px;min-width:0}.history-entry-info span{font-size:12px;color:#a9bfcc}.history-entry button{min-height:40px;flex-shrink:0}
+@media(max-width:500px){.history-manager-card{padding:12px}.history-entry{align-items:stretch;flex-direction:column}.history-entry button{width:100%}}
+
+/* 設備放置與快速檢視回饋 */
+.filter-preset-grid button.preset-active{background:#126394!important;color:#fff!important;border:2px solid #65cdff!important;box-shadow:0 0 0 2px rgba(52,175,255,.25) inset!important;font-weight:800!important}
+.filter-preset-grid button[aria-pressed="true"]::before{content:"✓ ";font-weight:900}
+.libitem.placing-selected{background:#15527b!important;border:2px solid #79d7ff!important;box-shadow:0 0 0 2px rgba(52,175,255,.25) inset!important;color:#fff!important}
+body.component-place-mode .canvas-wrap{cursor:crosshair}
+
+/* V6.9.34 日常精簡操作 */
+header .actions{position:relative;align-items:center}.project-extra{display:none;position:absolute;top:calc(100% + 7px);right:4px;z-index:120;background:#18252f;border:1px solid #52687a;border-radius:10px;padding:10px;box-shadow:0 16px 40px #0008;width:min(250px,90vw);gap:8px;flex-direction:column}.project-extra.open{display:flex}.project-extra button{width:100%;min-height:38px;text-align:left}#projectMenuBtn{white-space:nowrap}.compact-placement{padding:10px!important}.placement-switch{display:flex;gap:9px;align-items:center;font-size:13px;font-weight:700}.placement-switch input{width:19px;height:19px;accent-color:#32a9ff}.compact-placement p{color:#9eb0c0;font-size:11px;line-height:1.5;margin:7px 0 0}.filter-preset-grid button.preset-active{background:#17618d!important;color:#fff!important;box-shadow:inset 0 0 0 2px #68c8ff!important;border-color:#68c8ff!important}body.simple-ui .filter-preset-grid button{min-height:35px}body.simple-ui .compact-placement{display:block}
+
+/* 供水流向狀態圖例；不更動既有 CAD 圖面。 */
+.water-flow-legend{display:flex;gap:8px;flex-wrap:wrap;padding:8px 0;font-size:11px;color:#c6d9e5}
+.water-flow-legend span{display:inline-flex;gap:5px;align-items:center}
+.water-flow-legend .flow-line{display:inline-block;width:21px;border-top:3px solid #3fd0ff}
+.water-flow-legend .flow-standby{border-top-style:dashed;opacity:.6}
+.water-flow-legend .flow-off{border-top-style:dotted;opacity:.35}
+
+.water-trace-counts{font-size:12px;color:#a8d9e9;padding:5px 0;font-variant-numeric:tabular-nums}
+
+/* V6.9.41 可移動選取工具列：名稱區域為拖曳把手 */
+#selectionActionName{cursor:grab;touch-action:none;user-select:none;padding:5px 7px;background:rgba(87,150,185,.13);border-radius:5px}
+#selectionActionName:active{cursor:grabbing}
+@media(max-width:520px){.selection-action-bar[data-user-moved="1"]{bottom:auto!important;transform:none!important;right:auto!important;}}
+
+/* V6.9.42: 配電箱照片適窗。框選座標仍以圖片百分比定位，與顯示縮放無關。 */
+.modal-card[data-panel-tab="photo"] .panel-photo-stage{
+  width:100%; max-height:none; min-height:0; overflow:visible;
+  display:flex; align-items:center; justify-content:center;
+  padding:8px; box-sizing:border-box;
+}
+.modal-card[data-panel-tab="photo"] .panel-photo-fit{
+  display:inline-block; position:relative; line-height:0;
+  max-width:100%; max-height:100%; flex:0 1 auto;
+}
+.modal-card[data-panel-tab="photo"] .panel-photo-fit img{
+  display:block; width:auto; height:auto; max-width:100%;
+  max-height:clamp(240px,calc(100dvh - 350px),620px);
+  object-fit:contain; pointer-events:none;
+}
+.modal-card[data-panel-tab="photo"] .panel-photo-fit .panel-photo-overlay{
+  position:absolute; inset:0; line-height:normal; touch-action:none;
+}
+@media(max-height:650px){.modal-card[data-panel-tab="photo"] .panel-photo-fit img{max-height:max(150px,calc(100dvh - 270px))}}
+@media(max-width:820px){.modal-card[data-panel-tab="photo"] .panel-photo-fit img{max-height:clamp(170px,calc(100dvh - 320px),500px)}}
+
+/* V6.9.43 配電箱照片與表單雙欄編輯，不再以浮窗遮蓋斷路器 */
+.modal-card[data-panel-tab="photo"] .photo-workspace{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(290px,1fr);gap:12px;align-items:start;min-height:0}
+.modal-card[data-panel-tab="photo"] .photo-workspace .panel-photo-stage{min-width:0;max-height:calc(100dvh - 265px);overflow:hidden;position:sticky;top:0}
+.modal-card[data-panel-tab="photo"] .photo-workspace .panel-photo-fit img{max-height:calc(100dvh - 290px)}
+.photo-workspace-editor{background:#111c24;border:1px solid #426075;border-radius:9px;padding:12px;min-width:0;max-height:calc(100dvh - 265px);overflow-y:auto;overscroll-behavior:contain}
+.photo-editor-heading{display:flex;flex-direction:column;gap:3px;margin-bottom:9px;color:#e9f7ff;font-size:14px}
+.photo-editor-heading span{font-size:11px;color:#9eb9cb}
+.modal-card[data-panel-tab="photo"] .photo-editor-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.modal-card[data-panel-tab="photo"] .photo-editor-grid .box{min-width:0}
+.modal-card[data-panel-tab="photo"] .photo-editor-grid input,.modal-card[data-panel-tab="photo"] .photo-editor-grid select{font-size:13px;min-height:36px;pointer-events:auto;position:relative;z-index:2}
+.modal-card[data-panel-tab="photo"] .photo-editor-grid label{font-size:11px}
+.modal-card[data-panel-tab="photo"] .photo-workspace-editor .panel-photo-actions{margin-top:12px}
+.modal-card[data-panel-tab="photo"] .photo-mark-main{font-size:10px}
+@media(max-width:980px){
+ .modal-card[data-panel-tab="photo"] .photo-workspace{grid-template-columns:minmax(0,1fr)}
+ .modal-card[data-panel-tab="photo"] .photo-workspace .panel-photo-stage{position:relative;max-height:48dvh}
+ .modal-card[data-panel-tab="photo"] .photo-workspace .panel-photo-fit img{max-height:45dvh}
+ .photo-workspace-editor{max-height:none;overflow:visible}
+}
+
+/* V6.9.44 標註編號以迴路編號為準，容納 FRA1 等自訂字串 */
+.photo-mark-icon{max-width:110px;width:max-content;white-space:nowrap;line-height:1;padding-inline:6px}
+
+/* V6.9.45 照片標記說明預設位於框選區域下方，避免遮住上排其他開關。 */
+.photo-mark-main{top:calc(100% + 6px);left:0;right:auto;max-width:min(190px,38vw)}
+.photo-mark-main.flip{left:auto;right:0}
+.photo-mark-main.above{top:auto;bottom:calc(100% + 6px)}
+.photo-mark-main .pm-role{white-space:normal;overflow-wrap:anywhere;max-height:2.6em;overflow:hidden}
+
+/* V6.9.48 飼料輸送管線 */
+.feed-item{stroke:#f3b95d;stroke-width:3;fill:none;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round;}
+
+/* V6.9.49: compact placed-component locator */
+.cad-find-section input{width:100%;box-sizing:border-box;min-height:39px;margin:6px 0;background:#263645;color:#eefaff;border:1px solid #56758b;border-radius:8px;padding:9px;font-size:14px}
+.cad-find-section input:focus{outline:2px solid #4ac9ff;outline-offset:1px}
+.cad-find-meta{font-size:12px;color:#a9c7da;margin:3px 0 7px}
+.cad-find-results{max-height:245px;overflow:auto;display:grid;gap:5px}
+.cad-find-result{width:100%;display:flex;align-items:flex-start;flex-direction:column;gap:3px;text-align:left;background:#203544;border:1px solid #38566a;border-radius:8px;padding:9px;color:#e8f7ff;cursor:pointer}
+.cad-find-result:hover,.cad-find-result:focus-visible{background:#0f5577;outline:2px solid #5ccaff}
+.cad-find-result small{color:#a8c5d8;font-size:11px;overflow-wrap:anywhere}
+.cad-find-focus-ring{fill:rgba(255,200,65,.13);stroke:#ffdb54;stroke-width:4;vector-effect:non-scaling-stroke;stroke-dasharray:8 5;filter:drop-shadow(0 0 6px #ffc34b);animation:cad-find-pulse 1s ease-in-out infinite alternate}
+@keyframes cad-find-pulse{to{stroke-width:7;fill:rgba(255,200,65,.04)}}
+
+/* V6.9.51 — 上方單一全站元件搜尋欄 */
+.top-cad-search{position:relative;display:flex;align-items:center;flex:0 1 245px;min-width:160px;height:36px;z-index:45}
+.top-cad-search-icon{position:absolute;left:11px;color:#75caff;font-size:22px;pointer-events:none}
+.top-cad-search input{width:100%;height:36px;box-sizing:border-box;padding:7px 10px 7px 35px;border-radius:8px;border:1px solid #587890;background:#1d303d;color:#f5fcff;font-size:13px;outline:none}
+.top-cad-search input:focus{border-color:#45c8ff;box-shadow:0 0 0 2px rgba(69,200,255,.22)}
+.top-cad-search-drop{position:absolute;top:calc(100% + 7px);left:0;width:min(420px,calc(100vw - 40px));max-height:min(54vh,440px);overflow:auto;background:#14222d;border:1px solid #526e85;border-radius:10px;padding:9px;box-sizing:border-box;box-shadow:0 16px 38px #0009;z-index:55}
+.top-cad-search-drop[hidden]{display:none!important}
+.top-cad-search-title{display:flex;align-items:center;justify-content:space-between;color:#def2ff;font-size:12px;font-weight:700}
+.top-cad-search-title button{min-width:30px;min-height:28px;padding:2px 8px!important}
+.top-cad-search .cad-find-results{max-height:330px}
+.visually-hidden{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:820px){.top-cad-search{flex:1 0 185px;max-width:calc(100vw - 45px)}.top-cad-search-drop{width:min(390px,calc(100vw - 22px))}}
+
+/* V6.9.52 — 分類與編輯視窗可用性改善（不動 CAD 幾何） */
+.eq-categories{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.eq-categories button{min-height:36px;padding:6px 3px;font-size:12px}
+.eq-library-sections .section[data-eq-section] h3{font-size:14px;line-height:1.4}
+.eq-library-sections .libitem{min-height:59px;cursor:grab}
+.eq-library-sections .libitem:focus-visible,.eq-categories button:focus-visible{outline:2px solid #69d3ff;outline-offset:2px}
+/* Keep dialog action bars visible; constrain content rather than scrolling the entire page. */
+.modal-card{max-width:calc(100vw - 18px);max-height:calc(100dvh - 18px);min-height:0}
+.modal-head,.modal-foot,.panel-editor-tabs{flex-shrink:0}
+.modal-head .mh-actions{flex-wrap:wrap;justify-content:flex-end}
+.modal-head h2{line-height:1.4;min-width:0;overflow-wrap:anywhere}
+.modal-foot button,.modal-head button{min-height:34px}
+.cloud-modal-card{max-height:calc(100dvh - 24px);display:flex;flex-direction:column;overflow:hidden}
+.cloud-modal-body{overflow-y:auto;min-height:0;overscroll-behavior:contain}
+.cloud-modal-head{flex-shrink:0}
+@media(max-width:820px){
+ .modal-card{width:calc(100vw - 10px);max-width:calc(100vw - 10px);height:calc(100dvh - 12px);max-height:calc(100dvh - 12px)}
+ .modal-head{padding:8px;gap:6px}.modal-head h2{font-size:14px}
+ .modal-head .mh-actions button{font-size:11px;padding:6px}
+ .modal-foot{padding:7px;gap:6px}.modal-foot .summary{font-size:10px}
+ .eq-categories{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
+/* V6.9.53 fields hidden from view are never removed from forms or saved data. */
+.primary-properties .prop-row.relevance-hidden{display:none!important}
+.device-relevance-toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 2px;margin-bottom:6px;color:#b8d9ed;font-size:11px}
+.device-relevance-toolbar button{font-size:11px;padding:6px 8px;min-height:30px}
+@media(max-width:820px){.device-relevance-toolbar button{min-height:38px}}
+
+/* 四欄整齊呈現快速檢視九種預設，避免狹窄側欄中按鈕擁擠 */
+.filter-preset-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.filter-preset-grid button{font-size:11px;min-height:36px;padding:5px 3px;line-height:1.25}
+@media(max-width:820px){.filter-preset-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* V6.9.55: compact reusable view profiles */
+.custom-quick-view{border:1px solid #47697a;background:rgba(18,43,56,.45);border-radius:9px;padding:10px;margin:10px 0}
+.custom-view-head{display:flex;align-items:baseline;justify-content:space-between;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.custom-view-head strong{font-size:13px;color:#dbf1ff}
+.custom-view-actions{display:flex;gap:5px;align-items:center;margin-top:6px}
+.custom-view-actions select,.custom-view-actions input{flex:1;min-width:0;height:34px;border-radius:6px;background:#1a303c;color:#e9f9ff;border:1px solid #607c8d;padding:5px 7px;box-sizing:border-box}
+.custom-view-actions button{white-space:nowrap;min-height:34px;padding:5px 9px}
+#customViewStatus:not(:empty){margin-top:6px;color:#a6dcf7}
+
+/* V6.9.59 responsive quality corrections: do not edit CAD geometry */
+@media(max-width:820px){
+ html,body{max-width:100%;overflow-x:hidden}
+ header{min-width:0;overflow:hidden}
+ header h1{flex:0 1 auto;min-width:0;max-width:36vw;white-space:nowrap;text-overflow:ellipsis}
+ header .actions{min-width:0;max-width:62vw;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}
+ header .actions>button{white-space:nowrap;flex-shrink:0;min-height:36px}
+ .canvas-wrap{min-width:0;overflow:hidden}
+ .canvas-toolbar{display:flex!important;max-width:calc(100% - 12px)!important;width:calc(100% - 14px);right:7px;left:7px;top:7px;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:visible;white-space:nowrap;scrollbar-width:thin;touch-action:pan-x;z-index:15}
+ .canvas-toolbar>*{flex-shrink:0}
+ .zoom-pill{top:57px;right:7px;z-index:13}
+ .top-cad-search{flex:0 0 195px;min-width:175px;max-width:240px}
+ .top-cad-search-drop{position:fixed;top:109px;left:8px;right:8px;width:auto;max-height:min(48dvh,400px);z-index:1550}
+ aside,.right{box-sizing:border-box;max-width:100vw;width:min(92vw,375px);bottom:calc(54px + env(safe-area-inset-bottom));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+ .mobile-cad-dock{z-index:1300}
+ .mobile-cad-dock button{font-size:12px;min-width:0;touch-action:manipulation}
+ .modal{padding:4px!important;box-sizing:border-box}
+ .modal-card{box-sizing:border-box;width:calc(100vw - 8px)!important;max-width:calc(100vw - 8px)!important;max-height:calc(100dvh - 8px)!important;min-height:0;overflow:hidden}
+ .modal-head{min-width:0;flex-wrap:wrap;align-content:center}
+ .modal-head .mh-actions{min-width:0;gap:4px;max-width:100%}
+ .modal-head button{min-height:40px;touch-action:manipulation}
+ .modal-foot{gap:5px;flex-wrap:wrap;min-height:48px;max-height:112px;overflow-y:auto;justify-content:flex-end}
+ .modal-foot button{min-height:42px;flex-shrink:0}
+ .modal-foot .summary{flex:1 1 100%;min-width:0;white-space:normal;overflow-wrap:anywhere}
+ .modal-body,.modal-body.panel-tabbed,.modal-body.panel-tabbed .panel-form{min-width:0;overflow-x:hidden;overscroll-behavior:contain}
+ .panel-meta-grid,.photo-editor-grid,.modal-card[data-panel-tab="photo"] .photo-editor-grid{grid-template-columns:repeat(1,minmax(0,1fr))!important}
+ .panel-form input,.panel-form textarea,.panel-form select{max-width:100%;box-sizing:border-box;font-size:16px!important;min-height:40px}
+ .modal-card[data-panel-tab="photo"] .photo-workspace{grid-template-columns:minmax(0,1fr)!important}
+ .modal-card[data-panel-tab="photo"] .photo-workspace .panel-photo-stage{max-height:37dvh}
+ .modal-card[data-panel-tab="photo"] .photo-workspace .panel-photo-fit img{max-height:34dvh}
+ .cloud-modal-card,.history-manager-card{max-width:calc(100vw - 12px);max-height:calc(100dvh - 12px)}
+}
+@media(min-width:821px) and (max-width:1100px){
+ .modal-card{width:calc(100vw - 20px);max-width:calc(100vw - 20px)}
+ .top-cad-search{min-width:170px;flex:0 1 200px}
+ .canvas-toolbar{max-width:calc(100% - 120px);overflow-x:auto;flex-wrap:nowrap}
+}
+@media(max-width:820px) and (orientation:landscape){
+ .modal-card{height:calc(100dvh - 8px)!important}
+ .modal-head{max-height:90px;overflow-y:auto}
+ .modal-foot{max-height:88px}
+ .modal-card[data-panel-tab="photo"] .photo-workspace .panel-photo-stage{max-height:36dvh}
+ .modal-card[data-panel-tab="photo"] .photo-workspace .panel-photo-fit img{max-height:33dvh}
+}
+
+/* Wide phones in landscape (e.g. 844x390) must retain touch navigation. */
+@media (max-width:940px) and (max-height:500px) and (orientation:landscape){
+ .layout{grid-template-columns:1fr!important}
+ .layout>.canvas-wrap{grid-column:1!important}
+ aside,.right{display:block!important;position:fixed;top:48px;bottom:calc(51px + env(safe-area-inset-bottom));z-index:1200;width:min(78vw,365px);max-width:365px;overflow-y:auto;overscroll-behavior:contain}
+ aside{left:0;transform:translateX(-104%)}
+ .right{right:0;transform:translateX(104%)}
+ body.mobile-left-open aside{transform:translateX(0)!important}
+ body.mobile-right-open .right{transform:translateX(0)!important}
+ .mobile-cad-dock{position:fixed;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));bottom:0;left:0;right:0;z-index:1300;background:#18232c;border-top:1px solid #466276;padding:4px 7px max(4px,env(safe-area-inset-bottom))}
+ .mobile-cad-dock button{min-height:38px;font-size:12px;padding:6px 3px}
+ .canvas-toolbar{max-width:calc(100% - 12px)!important;right:6px;left:6px;top:6px;flex-wrap:nowrap;overflow-x:auto}
+ .zoom-pill{top:53px;right:7px}
+ .top-cad-search-drop{position:fixed;top:96px;left:8px;right:8px;width:auto;max-height:50dvh}
+}
+
+/* V6.9.60 員工查看與管理者權限入口 */
+.role-gate{position:fixed;inset:0;z-index:25000;background:rgba(9,20,29,.9);display:grid;place-items:center;padding:16px;box-sizing:border-box}
+.role-gate[hidden],.employee-bar[hidden]{display:none!important}
+.role-card{width:min(460px,100%);max-height:90dvh;overflow:auto;color:#e9f7ff;border:1px solid #46667a;border-radius:18px;background:#1a303f;padding:25px;box-sizing:border-box;box-shadow:0 16px 54px #0008}
+.role-card h2{margin:0 0 8px}.role-card p{color:#bbd0de}
+.role-choices{display:grid;gap:12px;margin-top:20px}.role-choices button,.role-card form button{min-height:48px;padding:11px;border-radius:9px}
+.role-card form{display:grid;gap:12px;margin-top:18px}.role-card form[hidden]{display:none}
+.role-card label{display:grid;gap:5px}.role-card input{width:100%;min-height:42px;box-sizing:border-box}
+.role-message{min-height:1em;color:#ffd48a!important}
+.employee-mode header .actions,.employee-mode .layout>aside,.employee-mode .layout>.right-panel,.employee-mode #mobileCadDock,.employee-mode .mobile-cad-dock,.employee-mode .selection-action-bar,.employee-mode .floating-toolbar{display:none!important}
+.employee-mode .layout{display:block!important}.employee-mode .canvas-wrap{width:100%!important;max-width:none!important;min-width:0!important}
+.employee-bar{position:fixed;bottom:12px;right:12px;z-index:980;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 12px;background:#182f3eee;color:#f1f9ff;border:1px solid #456d85;border-radius:12px;font-size:12px;max-width:calc(100vw - 24px)}
+.employee-bar button{min-height:34px;padding:5px 10px}
+.role-unselected>.layout,.role-unselected>header{visibility:hidden}
+@media(max-width:820px){.role-card{padding:17px}.employee-bar{left:8px;right:8px;bottom:8px;justify-content:center}.employee-mode .canvas-wrap{padding-bottom:62px!important}}
+
+/* V6.9.61 員工唯讀設備簡介與詳細視窗，確保不覆蓋操作按鈕 */
+.employee-object-tip[hidden],.employee-detail-card[hidden]{display:none!important}
+.employee-object-tip{position:fixed;z-index:1401;left:50%;bottom:72px;transform:translateX(-50%);width:min(390px,calc(100vw - 22px));box-sizing:border-box;max-height:38dvh;overflow:auto;background:#193240;border:1px solid #5e94ad;border-radius:12px;padding:14px;color:#fff;box-shadow:0 12px 30px #0008;pointer-events:auto}
+.employee-object-tip p{margin:8px 0}.employee-object-tip button,.employee-detail-head button{min-height:42px;border-radius:8px;padding:8px 12px;cursor:pointer;touch-action:manipulation}
+.employee-detail-card{position:fixed;z-index:1450;top:50%;left:50%;transform:translate(-50%,-50%);width:min(540px,calc(100vw - 20px));max-height:calc(100dvh - 32px);overflow-y:auto;box-sizing:border-box;padding:18px;background:#17313e;color:#fff;border:1px solid #69a2c0;border-radius:14px;box-shadow:0 20px 55px #000b;pointer-events:auto;overscroll-behavior:contain}
+.employee-detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:-18px;background:#17313e;padding:8px 0;z-index:1}.employee-detail-head h3{margin:8px 0;font-size:18px;overflow-wrap:anywhere}
+.employee-detail-row{display:grid;grid-template-columns:minmax(90px,32%) minmax(0,1fr);gap:12px;padding:12px 2px;border-bottom:1px solid #ffffff22;overflow-wrap:anywhere}.employee-detail-row strong{color:#b9d7e8}
+@media(max-width:820px){.employee-object-tip{bottom:78px}.employee-detail-card{max-height:calc(100dvh - 18px);padding:12px}.employee-detail-head{top:-12px}}
+
+/* V6.9.62 員工詳細資料唯讀區塊 */
+.employee-detail-section{color:#91d9ff;margin:18px 0 5px;font-size:14px;border-bottom:1px solid #ffffff33;padding-bottom:7px}
+.employee-detail-item{background:#102734;border:1px solid #416076;border-radius:9px;padding:10px 12px;margin:8px 0;overflow-wrap:anywhere}
+.employee-detail-item p{color:#d1e4ef;line-height:1.55;margin:7px 0 0;white-space:pre-wrap}
+.employee-panel-photo{display:block;max-width:100%;max-height:55dvh;object-fit:contain;margin:10px auto;border-radius:8px}
+.employee-detail-empty{color:#b7ccd8;font-size:13px;line-height:1.5}
+
+/* V6.9.63 員工端唯讀詳細視窗：固定工具區＋內容分頁 */
+.employee-detail-card{display:flex;flex-direction:column;overflow:hidden;max-height:min(740px,calc(100dvh - 22px));padding:0!important;width:min(680px,calc(100vw - 18px))}
+.employee-detail-head{flex:0 0 auto;position:relative!important;top:auto!important;display:flex;align-items:center;padding:14px 16px!important;border-bottom:1px solid #426073;z-index:2}
+.employee-detail-tabs{display:flex;flex:0 0 auto;gap:6px;padding:10px 12px;overflow-x:auto;scrollbar-width:thin;border-bottom:1px solid #395366}
+.employee-detail-tabs button{min-width:62px;flex:1;border:1px solid #4f7188;background:#233c4b;color:#dbeaf3;padding:9px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;touch-action:manipulation}
+.employee-detail-tabs button.active{border-color:#45c1f0;background:#164e6b;color:#fff}
+.employee-detail-content{overflow:auto;overscroll-behavior:contain;min-height:0;flex:1;padding:8px 16px 20px;outline-offset:-4px}
+.employee-detail-content img.employee-panel-photo{display:block;max-width:100%;max-height:55dvh;width:auto;height:auto;object-fit:contain;margin:12px auto}
+.employee-photo-jump{margin-top:8px;min-height:38px;border:1px solid #5a91b3;background:#20475b;color:#eef8ff;border-radius:7px;padding:6px 12px;cursor:pointer}
+.employee-mark-note{padding:9px;background:#254b5b;border:1px solid #5996b3;border-radius:8px}
+@media(max-width:600px){.employee-detail-card{width:calc(100vw - 12px);max-height:calc(100dvh - 12px)}.employee-detail-head{padding:10px!important}.employee-detail-head h3{font-size:16px}.employee-detail-tabs{padding:7px}.employee-detail-content{padding:6px 10px 14px}.employee-detail-row{grid-template-columns: minmax(80px,38%) 1fr;gap:7px}}
+
+/* V6.9.64 Employee read-only quick filters and touch-friendly detail scrolling */
+.employee-filter-panel[hidden]{display:none!important}
+.employee-filter-panel{position:fixed;z-index:1320;left:12px;top:70px;bottom:75px;width:min(338px,calc(100vw - 24px));max-height:calc(100dvh - 145px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:#1b2d39;border:1px solid #4e7187;border-radius:13px;padding:12px;box-shadow:0 15px 40px #0009}
+.employee-filter-panel .section{display:block!important;margin:0;border:0;background:transparent;padding:4px 0}
+.employee-filter-heading{position:sticky;top:-12px;z-index:2;padding:10px 0;display:flex;justify-content:space-between;align-items:center;background:#1b2d39;border-bottom:1px solid #476a80;margin-bottom:10px}
+.employee-filter-heading button{min-height:40px;min-width:40px}
+.employee-filter-panel button,.employee-filter-panel select{min-height:38px;touch-action:manipulation}
+.employee-mode .employee-detail-card{display:flex!important;flex-direction:column!important;height:min(740px,calc(100dvh - 22px));max-height:calc(100dvh - 22px);overflow:hidden!important;min-height:0;touch-action:auto}
+.employee-mode .employee-detail-card[hidden]{display:none!important}
+.employee-mode .employee-detail-head,.employee-mode .employee-detail-tabs{flex-shrink:0}
+.employee-mode .employee-detail-content{flex:1 1 auto!important;min-height:0!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;touch-action:pan-y!important;position:relative}
+.employee-mode .employee-detail-content .employee-detail-item{touch-action:pan-y}
+@media(max-width:820px){.employee-filter-panel{top:58px;bottom:78px;max-height:calc(100dvh - 145px);left:8px;width:min(340px,calc(100vw - 16px))}.employee-mode .employee-detail-card{height:calc(100dvh - 12px);max-height:calc(100dvh - 12px)}.employee-mode .employee-detail-tabs{flex-shrink:0}.employee-mode .employee-detail-content{padding-bottom:calc(18px + env(safe-area-inset-bottom))!important}}
+
+/* V6.9.65：始終可找到員工快速檢視，詳細視窗支援觸控與替代捲動 */
+#employeeQuickViewTop[hidden]{display:none!important}
+body.employee-mode #employeeQuickViewTop{display:block!important;position:fixed;top:54px;left:10px;z-index:1200;border:1px solid #58b9e6;background:#16435b;color:#fff;border-radius:9px;min-height:44px;padding:8px 13px;font-size:13px;box-shadow:0 4px 16px #0008;touch-action:manipulation}
+body.employee-mode .employee-filter-panel{top:105px;bottom:75px;max-height:calc(100dvh - 180px);z-index:1320}
+body.employee-mode .employee-detail-card{height:min(740px,calc(100dvh - 18px))!important;max-height:calc(100dvh - 18px)!important;display:flex!important;flex-direction:column!important}
+body.employee-mode .employee-detail-content{flex:1 1 0!important;min-height:0!important;max-height:none!important;overflow-y:scroll!important;overflow-x:hidden!important;overscroll-behavior-y:contain!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;scrollbar-width:thin;scrollbar-color:#7da1b8 #18323f}
+body.employee-mode .employee-detail-content *:not(button):not(input){touch-action:pan-y}
+body.employee-mode .employee-detail-scrollbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;background:#142c39;border-top:1px solid #45657b;z-index:2}
+body.employee-mode .employee-detail-scrollbar button{min-height:42px;min-width:94px;padding:7px 12px;border-radius:8px;border:1px solid #527c98;background:#24495d;color:#fff;touch-action:manipulation}
+body.employee-mode .employee-detail-scrollbar span{color:#bad2de;font-size:12px;text-align:center}
+@media(max-width:820px){body.employee-mode #employeeQuickViewTop{top:54px;left:8px}body.employee-mode .employee-filter-panel{top:104px;bottom:76px;max-height:calc(100dvh - 180px)}body.employee-mode .employee-detail-card{height:calc(100dvh - 12px)!important}}
+@media(max-height:450px){body.employee-mode #employeeQuickViewTop{top:5px;left:8px}body.employee-mode .employee-filter-panel{top:54px;bottom:8px;max-height:calc(100dvh - 65px)}body.employee-mode .employee-detail-scrollbar span{display:none}}
+
+/* V6.9.66：員工快速檢視併入頁首；詳細內容真正成為唯一的可滾動容器。 */
+body.employee-mode > header{display:flex!important;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;min-height:48px;box-sizing:border-box}
+body.employee-mode > header h1{flex:1 1 auto;min-width:0}
+body.employee-mode #employeeQuickViewTop{position:static!important;top:auto!important;left:auto!important;right:auto!important;z-index:auto!important;flex:0 0 auto;min-height:38px!important;box-shadow:none!important;white-space:normal;max-width:100%}
+body.employee-mode .employee-filter-panel{top:60px;max-height:calc(100dvh - 130px)}
+body.employee-mode .employee-detail-card{height:min(740px,calc(100dvh - 18px))!important;overflow:hidden!important}
+body.employee-mode .employee-detail-card>.employee-detail-content{display:block!important;flex:1 1 0!important;min-height:0!important;height:auto!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;touch-action:pan-y!important;-webkit-overflow-scrolling:touch!important}
+body.employee-mode .employee-detail-card>.employee-detail-content img{max-width:100%!important;height:auto!important}
+@media(max-width:820px){body.employee-mode > header{padding:6px 10px!important}body.employee-mode #employeeQuickViewTop{font-size:12px!important}body.employee-mode .employee-filter-panel{top:78px;max-height:calc(100dvh - 155px)}}
+@media(max-height:450px){body.employee-mode #employeeQuickViewTop{top:auto!important;left:auto!important}body.employee-mode .employee-filter-panel{top:55px;max-height:calc(100dvh - 65px)}}
+
+/* V6.9.68 — 統一員工與管理者「查看完整資料」的觸控版面，限定此視窗，不影響 CAD。 */
+body .employee-detail-card:not([hidden]){
+ display:flex!important;flex-direction:column!important;
+ width:min(680px,calc(100vw - 20px))!important;
+ height:min(740px,calc(100dvh - 24px))!important;
+ max-height:calc(100dvh - 24px)!important;
+ min-height:0!important;overflow:hidden!important;padding:0!important;
+ box-sizing:border-box;isolation:isolate;
+}
+body .employee-detail-card[hidden]{display:none!important}
+body .employee-detail-card>.employee-detail-head{
+ flex:0 0 auto!important;min-height:54px;display:flex;align-items:center;
+ padding:10px 14px!important;position:relative!important;top:auto!important;
+}
+body .employee-detail-card>.employee-detail-head h3{min-width:0;overflow-wrap:anywhere;font-size:clamp(16px,2.3vw,19px)}
+body .employee-detail-card>.employee-detail-head button{flex-shrink:0;min-height:42px;min-width:68px}
+body .employee-detail-card>.employee-detail-tabs{
+ flex:0 0 auto!important;display:flex;align-items:stretch;gap:6px;
+ overflow-x:auto!important;overflow-y:hidden;scrollbar-width:thin;
+ padding:9px 12px;max-width:100%;box-sizing:border-box;
+ -webkit-overflow-scrolling:touch;touch-action:pan-x;
+}
+body .employee-detail-card>.employee-detail-tabs button{
+ flex:0 0 auto!important;min-width:92px;min-height:42px;padding:9px 14px;
+ font-size:13px;touch-action:manipulation;
+}
+body .employee-detail-card>.employee-detail-content{
+ display:block!important;flex:1 1 0!important;min-height:0!important;height:0!important;
+ overflow-y:auto!important;overflow-x:hidden!important;
+ -webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;
+ overscroll-behavior-y:contain!important;scrollbar-width:thin;
+ padding:12px 16px calc(22px + env(safe-area-inset-bottom))!important;
+}
+body .employee-detail-card>.employee-detail-content img.employee-panel-photo{
+ display:block;width:auto!important;height:auto!important;max-width:100%!important;
+ max-height:min(65dvh,560px)!important;object-fit:contain;margin:10px auto 14px;
+}
+body .employee-detail-card>.employee-detail-content .employee-detail-row{
+ grid-template-columns:minmax(95px,34%) minmax(0,1fr);gap:10px;line-height:1.5;
+}
+body .employee-detail-card>.employee-detail-scrollbar{
+ display:flex!important;flex:0 0 auto!important;align-items:center;justify-content:space-between;
+ gap:8px;padding:8px 12px;background:#142c39;border-top:1px solid #45657b;
+}
+body .employee-detail-card>.employee-detail-scrollbar button{
+ min-height:42px;min-width:88px;border:1px solid #527c98;border-radius:8px;
+ background:#24495d;color:#fff;padding:7px 12px;touch-action:manipulation;
+}
+@media(max-width:820px){
+ body .employee-detail-card:not([hidden]){width:calc(100vw - 14px)!important;height:calc(100dvh - 14px)!important;max-height:calc(100dvh - 14px)!important}
+ body .employee-detail-card>.employee-detail-head{padding:9px 12px!important}
+ body .employee-detail-card>.employee-detail-tabs{padding:7px 10px}
+ body .employee-detail-card>.employee-detail-content{padding:8px 12px calc(18px + env(safe-area-inset-bottom))!important}
+ body .employee-detail-card>.employee-detail-content img.employee-panel-photo{max-height:58dvh!important}
+}
+@media(max-width:460px){
+ body .employee-detail-card>.employee-detail-tabs button{min-width:84px;font-size:12px}
+ body .employee-detail-card>.employee-detail-scrollbar span{font-size:11px}
+ body .employee-detail-card>.employee-detail-content .employee-detail-row{grid-template-columns:minmax(86px,36%) minmax(0,1fr);gap:7px}
+}
+@media(max-height:480px){
+ body .employee-detail-card:not([hidden]){height:calc(100dvh - 8px)!important;max-height:calc(100dvh - 8px)!important}
+ body .employee-detail-card>.employee-detail-head{min-height:42px;padding:5px 10px!important}
+ body .employee-detail-card>.employee-detail-head h3{margin:4px 0}
+ body .employee-detail-card>.employee-detail-tabs{padding:4px 8px}
+ body .employee-detail-card>.employee-detail-tabs button{min-height:36px}
+ body .employee-detail-card>.employee-detail-scrollbar{padding:4px 10px}
+ body .employee-detail-card>.employee-detail-scrollbar button{min-height:36px}
+ body .employee-detail-card>.employee-detail-scrollbar span{display:none}
+ body .employee-detail-card>.employee-detail-content img.employee-panel-photo{max-height:45dvh!important}
+}
+
+/* 6.9.69 Admin status: readable without obscuring CAD toolbar */
+.admin-save-state{display:flex;flex-wrap:wrap;gap:3px 10px;align-items:center;border:1px solid #395466;background:#162d3a;border-radius:7px;padding:5px 9px;font-size:11px;color:#d7eaf4;max-width:290px}
+.admin-save-state[data-state="pending"] #adminPublishState{color:#f7cb83}
+.admin-save-state[data-state="published"] #adminPublishState{color:#91efc0}
+.admin-save-state[data-state="error"] #adminPublishState{color:#ffadac}
+.employee-mode .admin-save-state,.role-unselected .admin-save-state{display:none!important}
+.admin-view-edit{margin-left:auto;background:#135e88!important;color:#fff!important;border:1px solid #3ca4d3!important;border-radius:7px;min-height:36px;padding:7px 12px}
+@media(max-width:820px){.admin-save-state{font-size:10px;max-width:100%;order:8}.admin-view-edit{min-height:42px}}
+
+/* V6.9.70 管理者儲存提示；不遮蔽 CAD 點選與工具列 */
+#adminSaveFeedback{position:fixed;right:14px;bottom:65px;z-index:1300;max-width:min(390px,calc(100vw - 28px));padding:10px 14px;border:1px solid #63b9d6;border-radius:9px;background:#153849;color:#f0fbff;box-shadow:0 8px 24px #0008;font-size:13px;pointer-events:none}
+#adminSaveFeedback[hidden]{display:none!important}
+@media(max-width:820px){#adminSaveFeedback{right:8px;bottom:88px;left:8px;max-width:none}}
+
+/* V6.9.71: 員工唯讀只保留查閱、定位、縮放操作；管理者不受影響。 */
+body.employee-mode .canvas-quick-tools,
+body.employee-mode #viewBackBtn,
+body.employee-mode #resetBtn,
+body.employee-mode #modeBtn,
+body.employee-mode #leftPanelToggle,
+body.employee-mode #rightPanelToggle,
+body.employee-mode #quickDeviceBar,
+body.employee-mode #routeTouchControls,
+body.employee-mode #deviceSearchPanel,
+body.employee-mode .selection-action-bar,
+body.employee-mode .floating-toolbar,
+body.employee-mode .advanced-only {display:none!important;}
+body.employee-mode .canvas-toolbar{display:flex!important;align-items:center;gap:7px;flex-wrap:wrap;max-width:100%;box-sizing:border-box;}
+body.employee-mode #fitBtn,body.employee-mode #topCadSearch,body.employee-mode #buildingJump {display:flex!important;}
+body.employee-mode #buildingJump{min-width:108px;max-width:230px;}
+body.employee-mode .zoom-pill{display:flex!important;}
+body.role-unselected .canvas-quick-tools,body.role-unselected #quickDeviceBar,body.role-unselected #routeTouchControls{visibility:hidden!important;pointer-events:none!important;}
+@media(max-width:820px){body.employee-mode .canvas-toolbar{flex-wrap:wrap!important;gap:6px!important}body.employee-mode #topCadSearch{min-width:145px;flex:1 1 180px}}

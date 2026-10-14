@@ -1,3 +1,1 @@
-虎尾場 2D CAD 配置系統
-Version: 6.9.3
-Build: All Building Recalibration + Larger Sidebar Typography + Cloud Endpoint
+虎尾母豬場 CAD V6.9.71｜管理者與員工雙模式

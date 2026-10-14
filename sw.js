@@ -1,13 +1,20 @@
-const CACHE='huwei-cad-v693-recalibrated';
+const CACHE='huwei-cad-v6971-dual-role-20261014';
 const ASSETS=[
   './',
   './index.html',
   './manifest.webmanifest',
   './assets/css/app.css',
   './assets/js/app-core.js',
+  './assets/js/dual-role.js','./assets/js/admin-status.js',
   './assets/js/app-ui.js',
+  './assets/js/equipment-library.js',
+  './assets/js/project-menu.js',
   './assets/js/pwa-register.js',
+'./assets/js/device-relevance.js',
+  './assets/js/mobile-ui-fix.js',
   './assets/images/cad-base.png',
+  './cad/虎尾母豬場CAD圖.dxf',
+  './assets/js/settings-quick.js',
   './assets/images/cad-white-reference.png',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png'

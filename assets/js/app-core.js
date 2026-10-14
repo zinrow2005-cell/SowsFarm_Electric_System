@@ -34,7 +34,7 @@ function syncSourceConfig(el){
    sourceFields.atsGenerator.value=el.dataset.atsGeneratorSourceName||'尚未接發電機';
  }
 }
-function saveSourceConfig(){
+function saveSourceConfig(deferSave=false){
  if(!selected?.classList?.contains('component'))return;
  if(selected.dataset.kind==='generator'){
    selected.dataset.generatorKva=String(Math.max(1,parseFloat(sourceFields.kva.value)||125));
@@ -46,11 +46,13 @@ function saveSourceConfig(){
    selected.dataset.atsMode=sourceFields.atsMode.value||'AUTO';selected.dataset.atsAmp=sourceFields.atsAmp.value||'';
    selected.dataset.spec=`ATS ${selected.dataset.atsAmp||'—'}A；${selected.dataset.atsMode}`;
  }
- syncSourceConfig(selected);refreshStats();autosave();refreshList();
+ syncSourceConfig(selected);if(!deferSave){refreshStats();autosave();refreshList();}
 }
 
 const valveEls={box:qs('valveConfig'),a:qs('valveSourceA'),b:qs('valveSourceB'),c:qs('valveSourceC'),active:qs('valveActivePort'),outlet:qs('valveOutlet'),mode:qs('valveMode'),note:qs('valveNote'),status:qs('valveStatus'),scale:qs('valveIconScale'),scaleNum:qs('valveIconScaleNumber')};
 function sourceColor(name){name=(name||'').trim();if(name.includes('水塔'))return waterColors.tower;if(name.includes('自來水'))return waterColors.city;if(name.includes('地下水')||name.includes('井'))return waterColors.ground;return waterColors.mixed}
+// Water source endpoint types also serve as anchor objects for water line snapping.
+function waterKindName(kind){return ({waterTower:'水塔',towerOutlet:'水塔',cityWater:'自來水',cityOutlet:'自來水',groundWater:'地下水',groundWell:'地下水',groundOutlet:'地下水'})[kind]||'';}
 function valveSourceByPort(g,port){if(!g)return'';if(port==='A')return g.dataset.valveSourceA||g.dataset.sourceA||'';if(port==='B')return g.dataset.valveSourceB||g.dataset.sourceB||'';if(port==='C')return g.dataset.valveSourceC||'';return''}
 function syncValvePanel(g){
  if(!valveEls.box)return;
@@ -73,6 +75,7 @@ function previewValvePanel(){
  if(!valveEls.status)return;
  const src=valveEls.active.value==='A'?valveEls.a.value:valveEls.active.value==='B'?valveEls.b.value:valveEls.active.value==='C'?valveEls.c.value:'';
  valveEls.status.innerHTML=`目前供水：<b style="color:${sourceColor(src)}">${src||'未指定'}</b><br>入口A：${valveEls.a.value||'—'}｜入口B：${valveEls.b.value||'—'}｜入口C：${valveEls.c.value||'—'}<br>出水：${valveEls.outlet.value||'—'}｜${valveEls.mode.value||'手動'}`;
+ const counts=JSON.parse(selected?.dataset?.valveConnections||'{}');if(selected?.dataset.kind==='threeWay')valveEls.status.textContent += `　連線 A:${counts.A||0} B:${counts.B||0} C:${counts.C||0} OUT:${counts.OUT||0}`;
 }
 function setValveScale(v,save=true){
  if(!selected?.classList?.contains('component')||selected.dataset.kind!=='threeWay')return;
@@ -103,12 +106,12 @@ function saveValveConfig(){
  fields.sourceB.value=selected.dataset.sourceB;
  fields.target.value=selected.dataset.target;
  fields.switchState.value=['水塔','自來水','地下水'].includes(selected.dataset.switchState)?selected.dataset.switchState:'';
- updateThreeWayVisual(selected);applyComponentVisual(selected);syncValvePanel(selected);autosave();refreshList();
+ updateThreeWayVisual(selected);applyComponentVisual(selected);syncValvePanel(selected);refreshWaterFlow();autosave();refreshList();
  status.textContent='已儲存三向閥設定：'+(selected.dataset.switchState||'未指定供水來源');
 }
-const labels={waterTower:'水塔',cityWater:'自來水',groundWater:'地下水',threeWay:'三向閥',utilityPower:'台電進線',generator:'發電機',ats:'ATS切換盤',mainSwitch:'總開關箱',mainPanel:'總配電箱',subPanel:'分電箱',equipmentPanel:'設備電箱',coolingPad:'水簾設備',exhaustFan:'主排風扇',guideFan:'導引扇',coolingPump:'水簾泵浦',heatLamp:'保溫燈 / 保溫設備',customDevice:'自訂設備'};
-const defaultMainFunctions={
- waterTower:'儲水與全場供水',cityWater:'自來水供水來源',groundWater:'地下水抽取與供水',threeWay:'水塔 / 地下水 / 自來水水源切換',
+const labels={feedSilo:'飼料桶',feedMotor:'飼料輸送馬達',feedCorner:'料線轉角器',feedDrop:'落料口',nippleDrinker:'自動飲水器',medTank:'藥液混合桶',dosingPump:'定量加藥器',feedSensor:'料位感測器',transferPump:'抽水馬達',boosterPump:'加壓泵',pressureTank:'壓力桶',waterFilter:'水質過濾器',waterMeter:'水表',checkValve:'逆止閥',shutoffValve:'球閥／關斷閥',levelSensor:'水位感測器',waterTower:'水塔',cityWater:'自來水',groundWater:'地下水',groundWell:'地下水井',cityOutlet:'自來水出水口',groundOutlet:'地下水出水口',towerOutlet:'水塔水出水口',threeWay:'三向閥',utilityPower:'台電進線',generator:'發電機',ats:'ATS切換盤',mainSwitch:'總開關箱',mainPanel:'總配電箱',subPanel:'分電箱',equipmentPanel:'設備電箱',coolingPad:'水簾設備',exhaustFan:'主排風扇',guideFan:'導引扇',coolingPump:'水簾泵浦',heatLamp:'保溫燈 / 保溫設備',customDevice:'自訂設備'};
+const defaultMainFunctions={feedSilo:'儲存散裝飼料',feedMotor:'驅動送料管線與螺旋',feedCorner:'連接飼料輸送管線轉角',feedDrop:'飼料分配至欄位或料槽',nippleDrinker:'豬隻飲水末端設備',medTank:'藥液或營養添加液混合',dosingPump:'飲水系統定量投藥',feedSensor:'監測飼料桶或料槽的料位',transferPump:'抽取地下水或將水送入水塔',boosterPump:'增加豬舍供水壓力',pressureTank:'穩定供水壓力與降低泵浦頻繁啟停',waterFilter:'過濾供水中的泥沙及雜質',waterMeter:'量測區域用水量',checkValve:'防止管路逆流',shutoffValve:'手動關斷或隔離管路',levelSensor:'監測水塔液位，作為補水控制依據',
+ waterTower:'儲水與全場供水',cityWater:'自來水供水來源',groundWater:'地下水抽取與供水',groundWell:'地下水取水井及抽水設備',cityOutlet:'自來水出水端，可連到三向閥',groundOutlet:'地下水出水端，可連到三向閥',towerOutlet:'水塔出水端，可連到三向閥',threeWay:'水塔 / 地下水 / 自來水水源切換',
  utilityPower:'台電主電源進線',generator:'停電時緊急備援供電',ats:'台電與發電機自動切換',
  mainSwitch:'全場總電源隔離與保護',mainPanel:'主配電與各區分路供電',subPanel:'區域分路供電與保護',equipmentPanel:'單一設備或設備群控制配電',
  coolingPad:'蒸發降溫與進風冷卻',exhaustFan:'主排風、換氣與高溫降溫',guideFan:'舍內氣流導引與循環',coolingPump:'水簾循環供水',heatLamp:'仔豬局部保溫'
@@ -117,7 +120,7 @@ function objectMainFunction(el){
  if(!el)return'';
  const own=String(el.dataset.mainFunction||'').trim();if(own)return own;
  if(el.classList?.contains('component'))return defaultMainFunctions[el.dataset.kind]||labels[el.dataset.kind]||el.dataset.name||'設備功能';
- if(el.tagName==='polyline')return el.parentElement?.id==='waterLayer'?'供水管路':(el.parentElement?.id==='elecLayer'?'電力配線':'路線');
+ if(el.tagName==='polyline')return el.parentElement?.id==='waterLayer'?'供水管路':(el.parentElement?.id==='elecLayer'?'電力配線':el.parentElement?.id==='feedLayer'?'飼料管線':'路線');
  if(el.tagName==='text')return'圖面文字註記';
  if(el.tagName==='rect'||el.tagName==='line'||el.tagName==='polygon')return'圖面註記';
  return el.dataset.name||'圖面物件';
@@ -134,11 +137,11 @@ function doCalibrationClick(p){calibrationPts.push(p);drawGuide(calibrationPts,'
 function doMeasureClick(p){measurePts.push(p);drawGuide(measurePts,'measureGuideLayer','');if(measurePts.length===1){status.textContent='量距：請點第二點';return}const units=Math.hypot(measurePts[1].x-measurePts[0].x,measurePts[1].y-measurePts[0].y);const m=metersFromUnits(units);const label=m!=null?`${m.toFixed(2)} m`:`${units.toFixed(1)} 圖面單位（尚未校正）`;drawGuide(measurePts,'measureGuideLayer',label);status.textContent='量距：'+label;measurePts=[];setTool('select')}
 function updateAllRouteLengths(){document.querySelectorAll('polyline[data-user="1"]').forEach(el=>{const u=routeLength(routePoints(el));el.dataset.length=u.toFixed(1);const m=metersFromUnits(u);el.dataset.realLength=m==null?'':m.toFixed(2)});refreshStats()}
 
-function setTool(t){if(pendingDuplicateSource&&t!=='select')cancelDuplicatePlacement();if(routeDraw&&!['water','electric'].includes(t))finishRoute(false);if(t!=='select')clearComponentHandles();if(pendingComponent&&t!=='select'){pendingComponent='';document.body.classList.remove('component-place-mode');document.querySelectorAll('[data-quick-component]').forEach(b=>b.classList.remove('active'));}if(routeDraw&&t!==routeDraw.kind)finishRoute(false);tool=t;document.body.classList.remove('device-menu-open');qs('quickDeviceBar')?.setAttribute('aria-hidden','true');document.querySelectorAll('.tool').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));if(t==='select')updateSelectionActionBar(selected);else hideSelectionActionBar();status.textContent='工具：'+({select:'選取 / 拖移',pan:'平移',water:'畫水線',electric:'畫電線',rect:'矩形',text:'文字'})[t]+'｜尺寸顯示 1 位小數。'}
+function setTool(t){if(pendingDuplicateSource&&t!=='select')cancelDuplicatePlacement();if(routeDraw&&!['water','electric','feed'].includes(t))finishRoute(false);if(t!=='select')clearComponentHandles();if(pendingComponent&&t!=='select'){pendingComponent='';pendingCustomDefinition=null;document.body.classList.remove('component-place-mode');document.querySelectorAll('.libitem[data-component]').forEach(el=>{el.classList.remove('placing-selected');el.setAttribute('aria-pressed','false')});document.querySelectorAll('[data-quick-component]').forEach(b=>b.classList.remove('active'));if(qs('quickDeviceMenuBtn')){qs('quickDeviceMenuBtn').textContent='＋ 設備';qs('quickDeviceMenuBtn').classList.remove('place-active')}}if(routeDraw&&t!==routeDraw.kind)finishRoute(false);tool=t;document.body.classList.remove('device-menu-open');qs('quickDeviceBar')?.setAttribute('aria-hidden','true');document.querySelectorAll('.tool').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));if(t==='select')updateSelectionActionBar(selected);else hideSelectionActionBar();status.textContent='工具：'+({select:'選取 / 拖移',pan:'平移',water:'畫水線',electric:'畫電線',feed:'畫料線',rect:'矩形',text:'文字'})[t]+'｜尺寸顯示 1 位小數。'}
 document.querySelectorAll('.tool').forEach(b=>b.onclick=()=>{setTool(b.dataset.tool);document.body.classList.toggle('pan-tool-ready',b.dataset.tool==='pan')});
 
 let objectDetailTarget=null;
-const objectDetailIcons={waterTower:'水塔',cityWater:'自',groundWater:'井',threeWay:'Y',utilityPower:'台電',generator:'G',ats:'ATS',mainSwitch:'總開',mainPanel:'總配',subPanel:'分電',equipmentPanel:'設備',coolingPad:'水簾',exhaustFan:'排風',guideFan:'導引',coolingPump:'P',heatLamp:'☀'};
+const objectDetailIcons={feedSilo:'料',feedMotor:'馬',feedCorner:'轉',feedDrop:'落',nippleDrinker:'飲',medTank:'藥',dosingPump:'劑',feedSensor:'位',transferPump:'P',boosterPump:'P+',pressureTank:'壓',waterFilter:'濾',waterMeter:'m³',checkValve:'▷|',shutoffValve:'⊗',levelSensor:'LV',waterTower:'水塔',cityWater:'自',groundWater:'井',groundWell:'深井',cityOutlet:'自出',groundOutlet:'井出',towerOutlet:'塔出',threeWay:'Y',utilityPower:'台電',generator:'G',ats:'ATS',mainSwitch:'總開',mainPanel:'總配',subPanel:'分電',equipmentPanel:'設備',coolingPad:'水簾',exhaustFan:'排風',guideFan:'導引',coolingPump:'P',heatLamp:'☀'};
 function detailRow(label,value){
  const v=String(value??'').trim();if(!v)return'';
  return `<b>${esc(label)}</b><span>${esc(v)}</span>`;
@@ -146,7 +149,7 @@ function detailRow(label,value){
 function objectTypeText(el){
  if(!el)return'—';
  if(el.classList?.contains('component'))return el.dataset.kind==='customDevice'?'自訂設備':(labels[el.dataset.kind]||el.dataset.kind||'設備');
- if(el.tagName==='polyline')return el.parentElement?.id==='waterLayer'?'水路':(el.parentElement?.id==='elecLayer'?'電路':'路線');
+ if(el.tagName==='polyline')return el.parentElement?.id==='waterLayer'?'水路':(el.parentElement?.id==='elecLayer'?'電路':el.parentElement?.id==='feedLayer'?'料線':'路線');
  return el.dataset.area||el.tagName||'圖面物件';
 }
 
@@ -209,7 +212,7 @@ function objectDetailRows(el){
 function hideSelectionActionBar(){const b=qs('selectionActionBar');if(b){b.classList.remove('show');b.setAttribute('aria-hidden','true')}}
 function positionSelectionActionBar(){
  const bar=qs('selectionActionBar');
- if(!bar?.classList.contains('show')||!selected||selected.dataset?.user!=='1'||tool!=='select'||!document.body.contains(selected))return;
+ if(!bar?.classList.contains('show')||!selected||selected.dataset?.user!=='1'||tool!=='select'||!document.body.contains(selected)||bar.dataset.userMoved==='1')return;
  if(window.matchMedia('(max-width:520px)').matches)return;
  const c=canvasWrap.getBoundingClientRect(),b=selected.getBoundingClientRect(),bw=bar.offsetWidth||210,bh=bar.offsetHeight||38;
  let left=(b.left+b.right)/2-c.left,top=b.top-c.top-bh-9;
@@ -222,10 +225,35 @@ function updateSelectionActionBar(el=selected){
  const bar=qs('selectionActionBar');
  if(!bar)return;
  if(!el||el.dataset?.user!=='1'||tool!=='select'){hideSelectionActionBar();return}
+ if(bar.dataset.selectedUid!==(el.dataset.uid||'')){bar.dataset.userMoved='';bar.dataset.selectedUid=el.dataset.uid||'';bar.style.removeProperty('bottom');bar.style.removeProperty('transform');bar.style.removeProperty('left');bar.style.removeProperty('top')}
  qs('selectionActionName').textContent=el.dataset.name||objectTypeText(el)||'物件';
  if(qs('selectionDuplicateBtn'))qs('selectionDuplicateBtn').style.display=el.classList?.contains('component')?'':'none';syncObjectLockUi(el);updatePhotoAction(el);
  bar.classList.add('show');bar.setAttribute('aria-hidden','false');requestAnimationFrame(positionSelectionActionBar);
 }
+// 選取浮動工具列：拖曳名稱區域可移動，不會擋住旋轉控制點。
+(function setupSelectionActionBarDrag(){
+ const bar=qs('selectionActionBar'),handle=qs('selectionActionName');if(!bar||!handle)return;
+ handle.title='按住拖移工具列（避免遮住旋轉控制點）';handle.setAttribute('role','button');handle.setAttribute('tabindex','0');
+ let dragging=null;
+ handle.addEventListener('pointerdown',e=>{
+  if(e.button!==0)return;
+  const wrap=canvasWrap.getBoundingClientRect(),rect=bar.getBoundingClientRect();
+  dragging={x:e.clientX,y:e.clientY,left:rect.left-wrap.left,top:rect.top-wrap.top};
+  bar.dataset.userMoved='1';bar.style.transform='none';bar.style.bottom='auto';
+  bar.style.setProperty('left',dragging.left+'px','important');bar.style.setProperty('top',dragging.top+'px','important');
+  try{handle.setPointerCapture(e.pointerId)}catch(_){}
+  e.preventDefault();e.stopPropagation();
+ });
+ handle.addEventListener('pointermove',e=>{
+  if(!dragging)return;
+  const bounds=canvasWrap.getBoundingClientRect(),w=bar.offsetWidth,h=bar.offsetHeight;
+  const left=Math.max(4,Math.min(bounds.width-w-4,dragging.left+e.clientX-dragging.x));
+  const top=Math.max(4,Math.min(bounds.height-h-4,dragging.top+e.clientY-dragging.y));
+  bar.style.setProperty('left',left+'px','important');bar.style.setProperty('top',top+'px','important');
+ });
+ for(const ev of ['pointerup','pointercancel','lostpointercapture'])handle.addEventListener(ev,()=>{dragging=null});
+})();
+
 function openSelectedPhoto(){
  if(!selected?.dataset||selected.dataset.user!=='1')return;
  if(window.matchMedia('(max-width:1100px)').matches){document.body.classList.add('mobile-right-open');document.body.classList.remove('mobile-left-open')}
@@ -246,7 +274,7 @@ function positionObjectDetail(){
 }
 
 function openObjectEditor(el){
- if(!el)return;
+ if(!el||!document.contains(el)||el.dataset?.user!=='1')return false;
  fill(el);
  document.body.classList.remove('right-collapsed');
  if(window.matchMedia('(max-width:1100px)').matches){document.body.classList.add('mobile-right-open');document.body.classList.remove('mobile-left-open')}
@@ -258,7 +286,10 @@ function openObjectEditor(el){
  right?.scrollTo({top:0,behavior:'smooth'});
  setTimeout(()=>{fields.name?.focus();fields.name?.select?.()},120);
  status.textContent='編輯：'+(el.dataset.name||objectTypeText(el))+'｜右側可調整大小、寬高比例與功能。';
+ return true;
 }
+// 唯讀詳細視窗與編輯面板共用同一個設備選取入口，避免選取到上一個物件。
+window.CAD_OPEN_OBJECT_EDITOR=function(el){return openObjectEditor(el)};
 let deletePendingObject=null;
 function closeDeleteConfirm(){
  deletePendingObject=null;
@@ -302,6 +333,7 @@ function showObjectDetail(el,keepExpanded=false){
  const note=String(el.dataset.note||'').trim();qs('objectDetailNote').style.display=(expanded&&note)?'':'none';qs('objectDetailNote').textContent=note?'備註：'+note:'';
  const actions=qs('objectDetailActions');actions.innerHTML='';
  if(el.dataset.user==='1'){
+   const view=document.createElement('button');view.type='button';view.textContent='查看完整資料';view.title='以分頁方式檢視基本資料、迴路、照片與標記（唯讀）';view.onclick=()=>{if(typeof window.CAD_VIEW_DETAILS==='function')window.CAD_VIEW_DETAILS(el)};actions.appendChild(view);
    const edit=document.createElement('button');edit.type='button';edit.textContent='編輯';edit.onclick=()=>openObjectEditor(el);actions.appendChild(edit);
    if(isPanel(el)){const btn=document.createElement('button');btn.type='button';btn.textContent='配電箱';btn.onclick=()=>openPanelEditor(el);actions.appendChild(btn)}
    const del=document.createElement('button');del.type='button';del.className='danger-btn';del.textContent='刪除';del.onclick=e=>{e.preventDefault();e.stopPropagation();requestDeleteObject(el)};actions.appendChild(del);
@@ -428,7 +460,7 @@ const BUILDING_FOCUS={
  },
  farrowingB:{
    label:'產房B 36床',
-   points:[[127,214],[646,333],[610,519],[126,407]]
+   points:[[125,206],[648,321],[590,520],[124,408]]
  },
  farrowingC:{
    label:'產房C 36床',
@@ -440,7 +472,7 @@ const BUILDING_FOCUS={
  },
  boar:{
    label:'公豬舍',
-   points:[[233,523],[590,523],[590,657],[233,657]]
+   points:[[235,510],[546,510],[585,531],[585,659],[235,659]]
  },
  giltBreeding:{
    label:'新女豬育成區 / 配種區',
@@ -520,12 +552,45 @@ function focusComponent(el){
  zoom=Math.max(.8,Math.min(5,target));const vb=svg.viewBox.baseVal;pan={x:vb.x+vb.width/2-zoom*p.x,y:vb.y+vb.height/2-zoom*p.y};tf();fill(el);showObjectDetail(el);status.textContent='已定位：'+(el.dataset.name||objectTypeText(el));
 }
 function closeDeviceSearch(){qs('deviceSearchPanel')?.classList.remove('show');qs('deviceSearchPanel')?.setAttribute('aria-hidden','true');qs('quickSearchBtn')?.classList.remove('active')}
+function openSearchMatch(result){
+ closeDeviceSearch();focusComponent(result.panel||result.component);
+ if(result.panel){
+  openPanelEditor(result.panel);
+  if(result.markUid){
+   setPanelEditorTab('photo');
+   const mark=(panelDraft.photoMarks||[]).find(m=>String(m.uid)===String(result.markUid));
+   if(mark){loadPhotoMarkEditor(mark);status.textContent='已找到配電箱照片標記：'+photoMarkCode(mark)}
+  }else if(result.circuitId){
+   setPanelEditorTab('circuits');
+   const tr=[...qs('panelCircuitBody').querySelectorAll('tr[data-ci]')].find(tr=>tr.querySelector('[data-f="id"]')?.value===result.circuitId);
+   if(tr){tr.scrollIntoView({block:'center',behavior:'smooth'});tr.style.outline='3px solid #f5d05b';setTimeout(()=>tr.style.removeProperty('outline'),3500)}
+   status.textContent='已找到配電箱迴路：'+result.circuitId;
+  }
+ }
+}
 function renderDeviceSearch(query=''){
  const box=qs('deviceSearchResults');if(!box)return;const q=String(query||'').trim().toLowerCase();
- if(!q){box.innerHTML='<div class="tiny">輸入名稱即可快速定位。</div>';return}
- const comps=[...document.querySelectorAll('.component[data-user="1"]')].filter(c=>[c.dataset.name,c.dataset.building,c.dataset.mainFunction,c.dataset.kind,c.dataset.spec].join(' ').toLowerCase().includes(q)).slice(0,12);
- box.innerHTML='';if(!comps.length){box.innerHTML='<div class="tiny">找不到符合的設備。</div>';return}
- comps.forEach(c=>{const b=document.createElement('button');b.type='button';b.className='device-search-result';const n=document.createElement('b');n.textContent=c.dataset.name||objectTypeText(c);const s=document.createElement('span');s.textContent=[c.dataset.building,objectTypeText(c)].filter(Boolean).join('｜');b.append(n,s);b.onclick=()=>{closeDeviceSearch();focusComponent(c)};box.appendChild(b)});
+ if(!q){box.innerHTML='<div class="tiny">搜尋圖面設備、配電箱照片標記或迴路編號。</div>';return}
+ const results=[];
+ const components=[...document.querySelectorAll('.component[data-user="1"]')];
+ for(const c of components){
+  const info=[c.dataset.name,c.dataset.building,c.dataset.mainFunction,c.dataset.kind,c.dataset.spec,c.dataset.note,c.dataset.uid];
+  if(info.join(' ').toLowerCase().includes(q))results.push({component:c,name:c.dataset.name||objectTypeText(c),detail:[c.dataset.building,objectTypeText(c)].filter(Boolean).join('｜')});
+  if(!isPanel(c))continue;
+  const marks=safeJson(c.dataset.panelPhotoMarks,[]);
+  if(Array.isArray(marks))for(const mark of marks){
+   const terms=[mark.circuitId,mark.breaker,mark.functionName,mark.purpose,mark.loadName,mark.sourceFrom,mark.targetTo,mark.detail,mark.note];
+   if(terms.join(' ').toLowerCase().includes(q))results.push({panel:c,markUid:mark.uid,name:mark.circuitId||mark.breaker||'照片標記',detail:'📷 '+(c.dataset.name||'配電箱')+'｜'+(mark.functionName||'照片標記')});
+  }
+  const circuits=safeJson(c.dataset.panelCircuits,[]);
+  if(Array.isArray(circuits))for(const circuit of circuits){
+   const terms=[circuit.id,circuit.loadName,circuit.groupArea,circuit.controlMode,circuit.note];
+   if(terms.join(' ').toLowerCase().includes(q))results.push({panel:c,circuitId:String(circuit.id||''),name:String(circuit.id||'未編號迴路'),detail:'⚡ '+(c.dataset.name||'配電箱')+'｜'+(circuit.loadName||'迴路')});
+  }
+ }
+ box.innerHTML='';if(!results.length){box.innerHTML='<div class="tiny">找不到符合項目。請確認該設備或照片標記已儲存到目前專案。</div>';return}
+ results.slice(0,30).forEach(result=>{const btn=document.createElement('button');btn.type='button';btn.className='device-search-result';const n=document.createElement('b');n.textContent=result.name;const detail=document.createElement('span');detail.textContent=result.detail;btn.append(n,detail);btn.onclick=()=>openSearchMatch(result);box.appendChild(btn)});
+ if(results.length>30){const p=document.createElement('div');p.className='tiny';p.textContent='顯示前 30 筆，請輸入更完整的名稱以縮小範圍。';box.appendChild(p)}
 }
 function toggleDeviceSearch(){const p=qs('deviceSearchPanel'),open=!p.classList.contains('show');p.classList.toggle('show',open);p.setAttribute('aria-hidden',open?'false':'true');qs('quickSearchBtn')?.classList.toggle('active',open);if(open){renderDeviceSearch(qs('deviceSearchInput')?.value||'');setTimeout(()=>qs('deviceSearchInput')?.focus(),40)}}
 
@@ -617,24 +682,156 @@ function endComponentHandleDrag(){
 
 function fill(el){
  qs('routeEditLayer')?.remove();selected?.classList.remove('selected');selected=el;if(el&&!el.classList.contains('hotspot'))el.classList.add('selected');clearFields();
- if(!el){clearComponentHandles();hideSelectionActionBar();syncObjectLockUi(null);if(qs('editCustomDeviceBtn'))qs('editCustomDeviceBtn').style.display='none';updateFieldPhotoTarget(null);status.textContent='工具：'+tool+'｜尺寸顯示 1 位小數。';return}
+ if(!el){window.refreshDeviceRelevantFields?.(null);clearComponentHandles();hideSelectionActionBar();syncObjectLockUi(null);if(qs('editCustomDeviceBtn'))qs('editCustomDeviceBtn').style.display='none';updateFieldPhotoTarget(null);status.textContent='工具：'+tool+'｜尺寸顯示 1 位小數。';return}
  fields.name.value=el.dataset.name||'';fields.mainFunction.value=el.dataset.mainFunction||objectMainFunction(el);fields.type.value=el.dataset.area||el.dataset.kind||el.tagName||'';fields.note.value=el.dataset.note||'';fields.rotation.value=el.dataset.rotation||0;fields.iconScale.value=el.dataset.iconScale||0.8;fields.shapeScaleX.value=el.dataset.shapeScaleX||1;fields.shapeScaleY.value=el.dataset.shapeScaleY||1;fields.shapeLock.value=el.dataset.shapeLock||'yes';fields.labelScale.value=el.dataset.labelScale||0.9;fields.showLabel.value=el.dataset.showLabel||'yes';fields.building.value=el.dataset.building||'';fields.sourceA.value=el.dataset.sourceA||'';fields.sourceB.value=el.dataset.sourceB||'';fields.target.value=el.dataset.target||'';fields.spec.value=el.dataset.spec||'';fields.lineSize.value=el.dataset.lineSize||'';fields.routeLength.value=el.tagName==='polyline'?(el.dataset.length||routeLength(routePoints(el)).toFixed(1))+' 圖面單位':'';fields.realLength.value=el.tagName==='polyline'?(el.dataset.realLength?el.dataset.realLength+' m':(scaleFactor?(routeLength(routePoints(el))*scaleFactor).toFixed(2)+' m':'尚未校正')):'';fields.powerParent.value=el.dataset.powerParentName||'';fields.powerKw.value=el.dataset.powerKw||'';fields.airflow.value=el.dataset.airflow||'';fields.staticPa.value=el.dataset.staticPa||'';fields.emergencyClass.value=el.dataset.emergencyClass||'';fields.switchState.value=el.dataset.switchState||'';fields.backup.value=el.dataset.backup||'';
  if(el.classList.contains('component')){const p=componentXY(el);fields.x.value=p.x.toFixed(1);fields.y.value=p.y.toFixed(1);applyComponentVisual(el)}else if(el.tagName==='line'){fields.x.value=(+el.getAttribute('x1')).toFixed(1);fields.y.value=(+el.getAttribute('y1')).toFixed(1)}else if(el.tagName==='polyline'){const ps=routePoints(el);if(ps.length){fields.x.value=ps[0].x.toFixed(1);fields.y.value=ps[0].y.toFixed(1)}renderRouteNodes(el)}
- updatePowerPathDisplay(el);syncValvePanel(el);syncSourceConfig(el);updateSimplePropertyVisibility(el);if(qs('editCustomDeviceBtn'))qs('editCustomDeviceBtn').style.display=el.dataset?.kind==='customDevice'?'':'none';syncObjectLockUi(el);renderComponentHandles(el);updateSelectionActionBar(el);updateFieldPhotoTarget(el);status.textContent='已選取：'+(el.dataset.name||el.tagName);
+ updatePowerPathDisplay(el);syncValvePanel(el);syncSourceConfig(el);updateSimplePropertyVisibility(el);window.refreshDeviceRelevantFields?.(el);if(qs('editCustomDeviceBtn'))qs('editCustomDeviceBtn').style.display=el.dataset?.kind==='customDevice'?'':'none';syncObjectLockUi(el);renderComponentHandles(el);updateSelectionActionBar(el);updateFieldPhotoTarget(el);status.textContent='已選取：'+(el.dataset.name||el.tagName);
 }
 function mk(tag,attrs={}){const el=document.createElementNS('http://www.w3.org/2000/svg',tag);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));return el}
+// 6.9.40 自由外框吸附：非閥門設備允許沿四邊連續滑動，位置記錄為 EDGE:邊號:比例。
+// 特殊三向閥必須保留 A/B/C/OUT 的語意端點，才能安全追蹤供水流向。
+function edgePoint(el,edge,t){
+ const b=componentBaseBBox(el), u=Math.max(0,Math.min(1,t));
+ const points=[{x:b.x+u*b.width,y:b.y}, {x:b.x+b.width,y:b.y+u*b.height},
+ {x:b.x+(1-u)*b.width,y:b.y+b.height},{x:b.x,y:b.y+(1-u)*b.height}];
+ return localPointToViewport(el,(points[edge]||points[0]).x,(points[edge]||points[0]).y);
+}
+function nearestComponentEdge(el,p){
+ const b=componentBaseBBox(el);
+ const corners=[[b.x,b.y],[b.x+b.width,b.y],[b.x+b.width,b.y+b.height],[b.x,b.y+b.height]].map(q=>localPointToViewport(el,q[0],q[1]));
+ let best=null;
+ for(let edge=0;edge<4;edge++){
+  const a=corners[edge],c=corners[(edge+1)%4],dx=c.x-a.x,dy=c.y-a.y,len2=dx*dx+dy*dy;
+  const t=Math.max(0,Math.min(1,len2?((p.x-a.x)*dx+(p.y-a.y)*dy)/len2:0));
+  const x=a.x+t*dx,y=a.y+t*dy,dist=Math.hypot(x-p.x,y-p.y);
+  if(!best||dist<best.dist)best={x,y,dist,name:`EDGE:${edge}:${t.toFixed(4)}`,el};
+ }
+ return best;
+}
 function componentPortCandidates(){
- const out=[];document.querySelectorAll('.component[data-user="1"]').forEach(g=>{const p=componentXY(g),sc=parseFloat(g.dataset.iconScale||1),kind=g.dataset.kind;
-   const d=30*sc; const ports=[{x:p.x,y:p.y-d,name:'N'},{x:p.x+d,y:p.y,name:'E'},{x:p.x,y:p.y+d,name:'S'},{x:p.x-d,y:p.y,name:'W'}];
-   if(kind==='threeWay'){ports.push({x:p.x,y:p.y-30*sc,name:'A'},{x:p.x-28*sc,y:p.y+20*sc,name:'B'},{x:p.x+28*sc,y:p.y+20*sc,name:'OUT'});}
-   ports.forEach(port=>out.push({...port,el:g}));
+ const out=[];document.querySelectorAll('.component[data-user="1"]').forEach(g=>{
+   if(g.dataset.kind==='threeWay'){
+    const p=componentXY(g),sc=parseFloat(g.dataset.iconScale||1);
+    [['A',0,-30],['B',-28,20],['C',28,20],['OUT',34,-12]].forEach(([name,x,y])=>out.push({x:p.x+x*sc,y:p.y+y*sc,name,el:g}));
+   }
  });return out;
 }
-function nearestSnap(p,r=18){if(qs('snapMode')?.value==='off')return null;let best=null,bd=Infinity;for(const q of componentPortCandidates()){const d=Math.hypot(q.x-p.x,q.y-p.y);if(d<r&&d<bd){bd=d;best=q}}return best}
+function nearestSnap(p,r=26){
+ if(qs('snapMode')?.value==='off')return null;
+ let best=null,bd=r;
+ for(const q of componentPortCandidates()){const d=Math.hypot(q.x-p.x,q.y-p.y);if(d<bd){bd=d;best=q}}
+ for(const g of document.querySelectorAll('.component[data-user="1"]')){
+  if(g.dataset.kind==='threeWay')continue;
+  const q=nearestComponentEdge(g,p);
+  if(q&&q.dist<bd){bd=q.dist;best=q}
+ }
+ return best;
+}
 function showSnap(q){if(snapVisual){snapVisual.remove();snapVisual=null}if(!q)return; snapVisual=mk('circle',{cx:q.x,cy:q.y,r:10,class:'snap-ring'});qs('annoLayer').appendChild(snapVisual)}
 function findComponent(uid){return uid?document.querySelector(`.component[data-uid="${uid}"]`):null}
-function portPosition(el,name){if(!el)return null;const p=componentXY(el),sc=parseFloat(el.dataset.iconScale||1),d=30*sc;if(name==='N'||name==='A')return{x:p.x,y:p.y-d};if(name==='E')return{x:p.x+d,y:p.y};if(name==='S')return{x:p.x,y:p.y+d};if(name==='W')return{x:p.x-d,y:p.y};if(name==='B')return{x:p.x-28*sc,y:p.y+20*sc};if(name==='OUT'||name==='C')return{x:p.x+28*sc,y:p.y+20*sc};return p}
-function updateConnectedRoutes(uid){document.querySelectorAll('polyline[data-user="1"]').forEach(r=>{let pts=routePoints(r),changed=false;if(!pts.length)return;if(r.dataset.startComponent===uid){const c=findComponent(uid),q=portPosition(c,r.dataset.startPort);if(q){pts[0]=q;changed=true}}if(r.dataset.endComponent===uid){const c=findComponent(uid),q=portPosition(c,r.dataset.endPort);if(q){pts[pts.length-1]=q;changed=true}}if(changed)setRoutePoints(r,pts)});rebuildPowerRelations();refreshStats()}
+function portPosition(el,name){
+ if(!el)return null;
+ if(typeof name==='string'&&name.startsWith('EDGE:')){
+  const parts=name.split(':'),side=Number(parts[1]),t=Number(parts[2]);
+  if(Number.isInteger(side)&&side>=0&&side<4&&Number.isFinite(t))return edgePoint(el,side,t);
+ }
+ const p=componentXY(el),sc=parseFloat(el.dataset.iconScale||1),d=30*sc;
+ if(name==='N'||name==='A')return{x:p.x,y:p.y-d};
+ if(name==='E')return{x:p.x+d,y:p.y};
+ if(name==='S')return{x:p.x,y:p.y+d};
+ if(name==='W')return{x:p.x-d,y:p.y};
+ if(name==='B')return{x:p.x-28*sc,y:p.y+20*sc};
+ if(name==='C')return{x:p.x+28*sc,y:p.y+20*sc};
+ if(name==='OUT')return{x:p.x+34*sc,y:p.y-12*sc};return p;
+}
+// V6.9.40：只沿已記錄設備端點的水線追蹤；未指定端點的線不自動接通。
+function refreshWaterFlow(){
+ const lines=[...document.querySelectorAll('#waterLayer polyline[data-user="1"]')];
+ const components=[...document.querySelectorAll('.component[data-user="1"][data-uid]')];
+ const byUid=new Map(components.map(c=>[c.dataset.uid,c]));
+ const links=new Map();
+ const edgeInfo=[];
+ const add=(node,edge)=>{if(!links.has(node))links.set(node,[]);links.get(node).push(edge)};
+ for(const line of lines){
+  const a=line.dataset.startComponent,b=line.dataset.endComponent;
+  // 不能以圖上線條相交推測接通，也不能把沒有雙端連接的線當已供水。
+  if(!a||!b||!byUid.has(a)||!byUid.has(b)){edgeInfo.push({line,valid:false});continue}
+  const left=byUid.get(a),right=byUid.get(b);
+  const ap=left.dataset.kind==='threeWay'?(line.dataset.startPort||''):null;
+  const bp=right.dataset.kind==='threeWay'?(line.dataset.endPort||''):null;
+  if((left.dataset.kind==='threeWay'&&!['A','B','C','OUT'].includes(ap))||(right.dataset.kind==='threeWay'&&!['A','B','C','OUT'].includes(bp))){edgeInfo.push({line,valid:false});continue}
+  const na=a+(ap?':'+ap:''),nb=b+(bp?':'+bp:'');
+  const item={line,valid:true,na,nb};edgeInfo.push(item);
+  add(na,{to:nb,line});add(nb,{to:na,line});
+ }
+ // 一般設備的所有管線端點共用同一個節點；三向閥則只允許目前入口通往 OUT。
+ for(const c of components){
+  if(c.dataset.kind!=='threeWay')continue;
+  const active=c.dataset.valveActivePort;
+  if(!['A','B','C'].includes(active))continue;
+  const inlet=c.dataset.uid+':'+active,outlet=c.dataset.uid+':OUT';
+  add(inlet,{to:outlet,valve:true});
+  // 不從 OUT 反灌到入口，避免標示錯誤的水源路徑。
+ }
+ const sourceKinds=new Set(['cityWater','groundWater','groundWell','waterTower','cityOutlet','groundOutlet','towerOutlet']);
+ const seeds=components.filter(c=>sourceKinds.has(c.dataset.kind)).map(c=>c.dataset.uid);
+ const seen=new Set(seeds),activated=new Set(),queue=[...seeds];
+ for(let i=0;i<queue.length&&i<100000;i++){
+  const at=queue[i];
+  for(const edge of links.get(at)||[]){
+   if(edge.line)activated.add(edge.line);
+   if(!seen.has(edge.to)){seen.add(edge.to);queue.push(edge.to)}
+  }
+ }
+ const standby=new Set();
+ for(const item of edgeInfo){
+  if(!item.valid||activated.has(item.line))continue;
+  for(const v of components){
+   if(v.dataset.kind!=='threeWay')continue;
+   const inactive=['A','B','C'].filter(p=>p!==v.dataset.valveActivePort);
+   if(inactive.some(p=>item.na===v.dataset.uid+':'+p||item.nb===v.dataset.uid+':'+p)){standby.add(item.line);break}
+  }
+ }
+ let on=0,back=0,unknown=0;
+ for(const line of lines){
+  const state=activated.has(line)?'active':standby.has(line)?'standby':'unconnected';
+  line.dataset.flowState=state;
+  line.style.opacity=state==='active'?'1':state==='standby'?'0.58':'0.32';
+  line.style.strokeDasharray=state==='active'?'none':state==='standby'?'7 5':'2 7';
+  line.style.strokeWidth=state==='active'?'4':'2.6';
+  line.setAttribute('title',state==='active'?'已連通的規劃供水路徑':state==='standby'?'三向閥非選定入口（備用）':'未連通／未確認端點');
+  if(state==='active')on++;else if(state==='standby')back++;else unknown++;
+ }
+ const indicator=document.getElementById('waterTraceCounts');
+ if(indicator)indicator.textContent=`連通 ${on}｜備用 ${back}｜未確認 ${unknown}`;
+}
+function syncValveFromWaterRoutes(){
+ const valves=[...document.querySelectorAll('.component[data-user="1"][data-kind="threeWay"]')];
+ valves.forEach(v=>{
+   const connections={A:[],B:[],C:[],OUT:[]};
+   document.querySelectorAll('#waterLayer polyline[data-user="1"]').forEach(r=>{
+     const ends=[['startComponent','startPort','endComponent'],['endComponent','endPort','startComponent']];
+     ends.forEach(([uidKey,portKey,otherKey])=>{
+       if(r.dataset[uidKey]!==v.dataset.uid)return;
+       const port=r.dataset[portKey];if(!connections[port])return;
+       const other=findComponent(r.dataset[otherKey]);
+       connections[port].push({route:r,other});
+     });
+   });
+   ['A','B','C'].forEach(port=>{
+      const entry=connections[port].find(x=>x.other&&waterKindName(x.other.dataset.kind));
+      if(entry)v.dataset['valveSource'+port]=waterKindName(entry.other.dataset.kind);
+   });
+   const out=connections.OUT.find(x=>x.other);
+   if(out)v.dataset.valveOutlet=out.other.dataset.name||'出水設備';
+   v.dataset.valveConnections=JSON.stringify(Object.fromEntries(Object.entries(connections).map(([k,a])=>[k,a.length])));
+   v.dataset.switchState=valveSourceByPort(v,v.dataset.valveActivePort);
+   updateThreeWayVisual(v);
+   if(selected===v)syncValvePanel(v);
+ });
+ refreshWaterFlow();
+}
+function updateConnectedRoutes(uid){document.querySelectorAll('polyline[data-user="1"]').forEach(r=>{let pts=routePoints(r),changed=false;if(!pts.length)return;if(r.dataset.startComponent===uid){const c=findComponent(uid),q=portPosition(c,r.dataset.startPort);if(q){pts[0]=q;changed=true}}if(r.dataset.endComponent===uid){const c=findComponent(uid),q=portPosition(c,r.dataset.endPort);if(q){pts[pts.length-1]=q;changed=true}}if(changed)setRoutePoints(r,pts)});rebuildPowerRelations();syncValveFromWaterRoutes();refreshStats()}
 function powerComponents(){const connected=new Set();document.querySelectorAll('#elecLayer polyline[data-user="1"]').forEach(r=>{if(r.dataset.startComponent)connected.add(r.dataset.startComponent);if(r.dataset.endComponent)connected.add(r.dataset.endComponent)});const panelKinds=new Set(['utilityPower','generator','ats','mainSwitch','mainPanel','subPanel','equipmentPanel','exhaustFan','guideFan','coolingPump','heatLamp']);return [...document.querySelectorAll('.component[data-user="1"]')].filter(c=>panelKinds.has(c.dataset.kind)||connected.has(c.dataset.uid)||parseFloat(c.dataset.powerKw||0)>0)}
 function rebuildPowerRelations(){powerComponents().forEach(c=>{c.dataset.powerParent='';c.dataset.powerParentName='';c.dataset.powerChildren='[]';if(c.dataset.kind==='ats'){c.dataset.atsUtilitySource='';c.dataset.atsUtilitySourceName='';c.dataset.atsGeneratorSource='';c.dataset.atsGeneratorSourceName=''}});document.querySelectorAll('#elecLayer polyline[data-user="1"]').forEach(r=>{const sEl=findComponent(r.dataset.startComponent),tEl=findComponent(r.dataset.endComponent);if(!sEl||!tEl)return;r.dataset.powerSource=sEl.dataset.uid;r.dataset.powerTarget=tEl.dataset.uid;r.dataset.sourceA=sEl.dataset.name||'';r.dataset.target=tEl.dataset.name||'';if(tEl.dataset.kind==='ats'&&sEl.dataset.kind==='utilityPower'){tEl.dataset.atsUtilitySource=sEl.dataset.uid;tEl.dataset.atsUtilitySourceName=sEl.dataset.name||'台電';return}if(tEl.dataset.kind==='ats'&&sEl.dataset.kind==='generator'){tEl.dataset.atsGeneratorSource=sEl.dataset.uid;tEl.dataset.atsGeneratorSourceName=sEl.dataset.name||'發電機';return}tEl.dataset.powerParent=sEl.dataset.uid;tEl.dataset.powerParentName=sEl.dataset.name||labels[sEl.dataset.kind]||'上游';let ch=[];try{ch=JSON.parse(sEl.dataset.powerChildren||'[]')}catch(e){}if(!ch.includes(tEl.dataset.uid))ch.push(tEl.dataset.uid);sEl.dataset.powerChildren=JSON.stringify(ch)});renderPowerTree();refreshEmergencySimulator();if(selected){updatePowerPathDisplay(selected);syncSourceConfig(selected)}}
 function powerPathFor(el){if(!el?.classList?.contains('component'))return[];const path=[el];let cur=el,guard=0;while(cur?.dataset?.powerParent&&guard++<20){cur=findComponent(cur.dataset.powerParent);if(!cur)break;path.unshift(cur)}return path}
@@ -669,7 +866,7 @@ function updateRouteAngleBadge(last,q){
 }
 
 function orthogonalPoint(last,p){if(qs('routeMode')?.value!=='ortho')return p; const dx=Math.abs(p.x-last.x),dy=Math.abs(p.y-last.y);return dx>=dy?{x:p.x,y:last.y}:{x:last.x,y:p.y}}
-function beginRoute(kind,p,snap){const poly=mk('polyline',{points:`${p.x.toFixed(1)},${p.y.toFixed(1)}`,fill:'none'});poly.dataset.user='1';poly.dataset.kind=kind;poly.dataset.name=(kind==='water'?'水線 ':'電線 ')+counter++;poly.dataset.lineSize='';poly.dataset.sourceA=kind==='water'?qs('waterSource').value:'';poly.dataset.startComponent=snap?.el?.dataset?.uid||'';poly.dataset.startPort=snap?.name||'';poly.setAttribute('class',(kind==='water'?'water-item':'elec-item')+' editable');if(kind==='water')poly.setAttribute('stroke',waterColors[poly.dataset.sourceA]||waterColors.mixed);(kind==='water'?qs('waterLayer'):qs('elecLayer')).appendChild(poly);routeDraw={kind,el:poly,points:[{x:p.x,y:p.y}],preview:p};document.body.classList.add('route-drawing');qs('routeTouchControls')?.setAttribute('aria-hidden','false');fill(poly);status.textContent=(kind==='water'?'水線':'電線')+'：移動滑鼠決定任意角度，單擊增加轉折點，雙擊 / Enter 完成。';return poly}
+function beginRoute(kind,p,snap){const poly=mk('polyline',{points:`${p.x.toFixed(1)},${p.y.toFixed(1)}`,fill:'none'});poly.dataset.user='1';poly.dataset.kind=kind;poly.dataset.name=(kind==='water'?'水線 ':kind==='feed'?'料線 ':'電線 ')+counter++;poly.dataset.lineSize='';poly.dataset.sourceA=kind==='water'?qs('waterSource').value:'';poly.dataset.startComponent=snap?.el?.dataset?.uid||'';poly.dataset.startPort=snap?.name||'';poly.setAttribute('class',(kind==='water'?'water-item':kind==='feed'?'feed-item':'elec-item')+' editable');if(kind==='water')poly.setAttribute('stroke',waterColors[poly.dataset.sourceA]||waterColors.mixed);(kind==='water'?qs('waterLayer'):kind==='feed'?qs('feedLayer'):qs('elecLayer')).appendChild(poly);routeDraw={kind,el:poly,points:[{x:p.x,y:p.y}],preview:p};document.body.classList.add('route-drawing');qs('routeTouchControls')?.setAttribute('aria-hidden','false');fill(poly);status.textContent=(kind==='water'?'水線':kind==='feed'?'料線':'電線')+'：移動滑鼠決定任意角度，單擊增加轉折點，雙擊 / Enter 完成。';return poly}
 
 function undoRoutePoint(){
  if(!routeDraw)return;
@@ -679,7 +876,7 @@ function undoRoutePoint(){
 }
 
 function addRoutePoint(p,snap,e=null){if(!routeDraw)return;let last=routeDraw.points[routeDraw.points.length-1];let q=freeRoutePoint(last,p,e);if(snap)q={x:snap.x,y:snap.y};if(Math.hypot(q.x-last.x,q.y-last.y)<1)return;routeDraw.points.push(q);if(snap){routeDraw.el.dataset.endComponent=snap.el?.dataset?.uid||'';routeDraw.el.dataset.endPort=snap.name||''}setRoutePoints(routeDraw.el,routeDraw.points);const startUid=routeDraw.el.dataset.startComponent||'',startPort=routeDraw.el.dataset.startPort||'';if(snap&&(snap.el?.dataset?.uid!==startUid||snap.name!==startPort)){const name=routeDraw.el.dataset.name||'線路';finishRoute(false);setTool('select');status.textContent=name+' 已接到設備端點並自動完成';}}
-function finishRoute(cancel=false){if(!routeDraw)return;if(cancel||routeDraw.points.length<2){routeDraw.el.remove();}else{setRoutePoints(routeDraw.el,routeDraw.points);if(routeDraw.kind==='electric')rebuildPowerRelations();autosave();refreshList();fill(routeDraw.el)}routeDraw=null;document.body.classList.remove('route-drawing');qs('routeTouchControls')?.setAttribute('aria-hidden','true');if(qs('routeAngleBadge'))qs('routeAngleBadge').textContent='角度 —';if(snapVisual){snapVisual.remove();snapVisual=null}status.textContent=cancel?'已取消折線':'折線完成';}
+function finishRoute(cancel=false){if(!routeDraw)return;if(cancel||routeDraw.points.length<2){routeDraw.el.remove();}else{setRoutePoints(routeDraw.el,routeDraw.points);if(routeDraw.kind==='electric')rebuildPowerRelations();if(routeDraw.kind==='water')syncValveFromWaterRoutes();autosave();refreshList();fill(routeDraw.el)}routeDraw=null;document.body.classList.remove('route-drawing');qs('routeTouchControls')?.setAttribute('aria-hidden','true');if(qs('routeAngleBadge'))qs('routeAngleBadge').textContent='角度 —';if(snapVisual){snapVisual.remove();snapVisual=null}status.textContent=cancel?'已取消折線':'折線完成';}
 function renderRouteNodes(el){qs('routeEditLayer')?.remove();const layer=mk('g',{id:'routeEditLayer'});qs('annoLayer').appendChild(layer);if(!el||el.tagName!=='polyline')return;routePoints(el).forEach((p,i)=>{const c=mk('circle',{cx:p.x,cy:p.y,r:i===0||i===routePoints(el).length-1?6:5,class:'route-node '+(i===0||i===routePoints(el).length-1?'endpoint':'')});c.dataset.index=i;c.dataset.routeEditor='1';layer.appendChild(c)})}
 function updateThreeWayVisual(g){if(!g||g.dataset.kind!=='threeWay')return;const activePort=g.dataset.valveActivePort||'';const state=valveSourceByPort(g,activePort)||g.dataset.switchState||'';const color=sourceColor(state);g.querySelectorAll('.tw-branch').forEach(x=>{x.classList.remove('threeway-active');x.setAttribute('stroke','#7e6b9e')});const br=activePort?g.querySelector(`[data-branch="${activePort}"]`):null;if(br){br.setAttribute('stroke',color);br.classList.add('threeway-active')}let st=g.querySelector('.switch-label');if(!st){st=mk('text',{x:0,y:62,'text-anchor':'middle','font-size':12,class:'switch-label'});g.appendChild(st)}st.setAttribute('fill',color);st.textContent=state?'目前：'+state:'未設定切換';}
 
@@ -729,28 +926,43 @@ function setPendingComponent(kind){
  if(kind!=='customDevice')pendingCustomDefinition=null;
  document.body.classList.remove('device-menu-open');qs('quickDeviceBar')?.setAttribute('aria-hidden','true');
  document.body.classList.toggle('component-place-mode',!!pendingComponent);
+ document.querySelectorAll('.libitem[data-component]').forEach(el=>{const on=el.dataset.component===pendingComponent;el.classList.toggle('placing-selected',on);el.setAttribute('aria-pressed',String(on))});
  document.querySelectorAll('[data-quick-component]').forEach(b=>b.classList.toggle('active',b.dataset.quickComponent===pendingComponent));
  if(qs('quickDeviceMenuBtn')){qs('quickDeviceMenuBtn').textContent=pendingComponent?'✕ 取消設備':'＋ 設備';qs('quickDeviceMenuBtn').classList.toggle('place-active',!!pendingComponent)}
  if(pendingComponent){
    setTool('select');
-   status.textContent='放置 '+componentLabel(pendingComponent)+'：請點圖面位置；放置一次後自動回選取。';
+   status.textContent='放置 '+componentLabel(pendingComponent)+'：請點圖面位置；Esc 取消。';
  }else{
    status.textContent='已取消設備放置。';
  }
 }
 function placePendingComponent(p){
  if(!pendingComponent)return false;
+ // 避免『目前篩選』將剛放置的設備立即隱藏，造成看不到圖示。
+ viewPreset='all';deviceTypeFilter=null;singleDeviceUid='';
+ if(qs('buildingFilter'))qs('buildingFilter').value='all';
+ if(qs('deviceSingleFilter'))qs('deviceSingleFilter').value='';
+ ['componentChk','ventChk'].forEach(id=>{if(qs(id))qs(id).checked=true});
+ ['componentLayer','ventLayer'].forEach(id=>{if(qs(id))qs(id).style.display=''});
  const kind=pendingComponent,customDef=kind==='customDevice'?pendingCustomDefinition:null;
- // 一次性放置：先解除放置狀態，避免後續每次點擊都繼續新增。
+ const keepPlacing=false; // 單次放置：再次點設備才重新進入放置模式。
+ // 由使用者決定是否連續放置。
  pendingComponent='';pendingCustomDefinition=null;
  document.body.classList.remove('component-place-mode','device-menu-open');
+ document.querySelectorAll('.libitem[data-component]').forEach(el=>{el.classList.remove('placing-selected');el.setAttribute('aria-pressed','false')});
  document.querySelectorAll('[data-quick-component]').forEach(b=>b.classList.remove('active'));
  if(qs('quickDeviceMenuBtn')){qs('quickDeviceMenuBtn').textContent='＋ 設備';qs('quickDeviceMenuBtn').classList.remove('place-active','active')}
  qs('quickDeviceBar')?.setAttribute('aria-hidden','true');
  setTool('select');
  const g=createComponent(kind,p,customDef);
+ applyViewFilters();renderDeviceFilters();
  fill(g);showObjectDetail(g);renderComponentHandles(g);
- status.textContent='已放置：'+(g.dataset.name||componentLabel(kind))+'｜已自動回到「選取」。';
+ if(keepPlacing){
+   // 連續放置重新啟用放置模式，保持目前設備分類頁，不切換回其他分頁。
+   pendingCustomDefinition=customDef;
+   setPendingComponent(kind);
+   status.textContent='已放置：'+(g.dataset.name||componentLabel(kind))+'｜繼續點圖面可放置同設備，Esc 結束。';
+ }else{status.textContent='已放置：'+(g.dataset.name||componentLabel(kind))+'｜已回到選取模式。';}
  return true;
 }
 
@@ -762,9 +974,29 @@ function createComponent(kind,p,customDef=null){
  g.dataset.mainFunction=isCustom?(customDef?.mainFunction||baseLabel):(defaultMainFunctions[kind]||labels[kind]||'');g.dataset.locked='no';g.dataset.photoCount='0';g.dataset.x=p.x.toFixed(1);g.dataset.y=p.y.toFixed(1);g.dataset.rotation='0';g.dataset.iconScale='0.8';g.dataset.shapeScaleX='1';g.dataset.shapeScaleY='1';g.dataset.shapeLock='yes';g.dataset.labelScale='0.9';g.dataset.showLabel='yes';g.dataset.building='';g.dataset.sourceA='';g.dataset.sourceB='';g.dataset.target='';g.dataset.spec='';g.dataset.lineSize='';g.dataset.powerKw='';g.dataset.airflow='';g.dataset.staticPa='';g.dataset.emergencyClass='';g.dataset.switchState='';g.dataset.backup='';g.dataset.powerParent='';g.dataset.powerParentName='';g.dataset.powerChildren='[]';g.dataset.panelMeta='';g.dataset.panelCircuits='';g.setAttribute('transform',`translate(${p.x} ${p.y}) rotate(0) scale(0.8)`);
  let stroke='#72dcff',fillColor='rgba(35,80,108,.82)',short='';
  if(kind==='customDevice'){g.dataset.customIcon=String(customDef?.icon||'⚙').slice(0,4);g.dataset.customCategory=['other','water','electric','vent','waste'].includes(customDef?.category)?customDef.category:'other';const th=customTheme(g.dataset.customCategory);stroke=th.stroke;fillColor=th.fill;short=g.dataset.customIcon;g.dataset.spec='自訂設備';}
+ if(kind==='feedSilo'){stroke='#eab963';fillColor='rgba(74,64,42,.90)' ;short='料';g.dataset.spec='料桶容量／材質／編號：';}
+ if(kind==='feedMotor'){stroke='#eab963';fillColor='rgba(74,64,42,.90)' ;short='馬';g.dataset.spec='功率／電壓／送料量：';}
+ if(kind==='feedCorner'){stroke='#eab963';fillColor='rgba(74,64,42,.90)' ;short='轉';g.dataset.spec='轉角角度／料線尺寸：';}
+ if(kind==='feedDrop'){stroke='#eab963';fillColor='rgba(74,64,42,.90)' ;short='落';g.dataset.spec='落料管徑／位置：';}
+ if(kind==='nippleDrinker'){stroke='#65d2f1';fillColor='rgba(74,64,42,.90)' ;short='飲';g.dataset.spec='水壓／規格／數量：';}
+ if(kind==='medTank'){stroke='#65d2f1';fillColor='rgba(74,64,42,.90)' ;short='藥';g.dataset.spec='容量／混合比例：';}
+ if(kind==='dosingPump'){stroke='#65d2f1';fillColor='rgba(74,64,42,.90)' ;short='劑';g.dataset.spec='加藥比例／流量／功率：';}
+ if(kind==='feedSensor'){stroke='#eab963';fillColor='rgba(74,64,42,.90)' ;short='位';g.dataset.spec='高低料位／安裝位置：';}
  if(kind==='waterTower'){stroke='#3fd0ff';short='水塔';g.dataset.spec='容量：';}
  if(kind==='cityWater'){stroke='#ffb454';fillColor='rgba(100,69,28,.85)';short='自';g.dataset.spec='管徑：';}
  if(kind==='groundWater'){stroke='#51df95';fillColor='rgba(30,91,60,.85)';short='井';g.dataset.spec='泵浦/管徑：';}
+ if(kind==='groundWell'){stroke='#51df95';fillColor='rgba(23,72,55,.9)';short='深井';g.dataset.spec='井深／抽水量／泵浦規格：';g.dataset.sourceA='地下水';}
+ if(kind==='cityOutlet'){stroke='#ffb454';fillColor='rgba(100,69,28,.85)';short='自出';g.dataset.sourceA='自來水';g.dataset.spec='管徑／出水壓力：';}
+ if(kind==='groundOutlet'){stroke='#51df95';fillColor='rgba(30,91,60,.85)';short='井出';g.dataset.sourceA='地下水';g.dataset.spec='管徑／泵浦出水：';}
+ if(kind==='towerOutlet'){stroke='#3fd0ff';fillColor='rgba(35,80,108,.82)';short='塔出';g.dataset.sourceA='水塔';g.dataset.spec='出水管徑／高度：';}
+ if(kind==='transferPump'){stroke='#7ae2a5';short='P';g.dataset.spec='功率／流量／揚程：';g.dataset.sourceA='水塔';}
+ if(kind==='boosterPump'){stroke='#7ae2a5';short='P+';g.dataset.spec='功率／流量／揚程：';g.dataset.sourceA='水塔';}
+ if(kind==='pressureTank'){stroke='#5cd6ef';short='壓';g.dataset.spec='容量／工作壓力：';g.dataset.sourceA='水塔';}
+ if(kind==='waterFilter'){stroke='#5cd6ef';short='濾';g.dataset.spec='濾材／流量／更換週期：';g.dataset.sourceA='水塔';}
+ if(kind==='waterMeter'){stroke='#5cd6ef';short='m³';g.dataset.spec='口徑／累計用水量：';g.dataset.sourceA='水塔';}
+ if(kind==='checkValve'){stroke='#c6a3f6';short='▷|';g.dataset.spec='口徑／方向：';g.dataset.sourceA='水塔';}
+ if(kind==='shutoffValve'){stroke='#c6a3f6';short='⊗';g.dataset.spec='口徑／位置／常態：';g.dataset.sourceA='水塔';}
+ if(kind==='levelSensor'){stroke='#5cd6ef';short='LV';g.dataset.spec='高低液位設定：';g.dataset.sourceA='水塔';}
  if(kind==='threeWay'){stroke='#be9cff';fillColor='rgba(71,51,101,.9)';short='Y';g.dataset.valveSourceA='水塔';g.dataset.valveSourceB='地下水';g.dataset.valveSourceC='自來水';g.dataset.valveActivePort='A';g.dataset.valveOutlet='';g.dataset.valveMode='手動';g.dataset.valveNote='';g.dataset.sourceA='水塔';g.dataset.sourceB='地下水';g.dataset.switchState='水塔';}
  if(kind==='utilityPower'){stroke='#63c9ff';fillColor='rgba(28,75,103,.92)';short='台電';g.dataset.spec='台電進線；380/220V';g.dataset.backup='no';}
  if(kind==='generator'){stroke='#ffd25f';fillColor='rgba(92,73,24,.94)';short='G';g.dataset.generatorKva='125';g.dataset.generatorPf='0.8';g.dataset.generatorKw='100.0';g.dataset.spec='125 kVA；PF 0.8；可用 100.0 kW';g.dataset.backup='yes';}
@@ -798,7 +1030,7 @@ function createComponent(kind,p,customDef=null){
    g.appendChild(mk('circle',{cx:0,cy:0,r:22,class:'box',stroke,fill:fillColor}));
    g.appendChild(mk('path',{d:'M -10 7 C -2 1 1 -8 10 -10 C 10 -2 5 8 -4 11 Z',fill:stroke,opacity:.8}));
  }else if(kind==='threeWay'){
-   g.appendChild(mk('circle',{cx:0,cy:0,r:15,class:'box',stroke,fill:fillColor}));g.appendChild(mk('line',{x1:0,y1:-15,x2:0,y2:-30,stroke:'#7e6b9e','stroke-width':3,class:'tw-branch', 'data-branch':'A'}));g.appendChild(mk('line',{x1:-12,y1:8,x2:-28,y2:20,stroke:'#7e6b9e','stroke-width':3,class:'tw-branch', 'data-branch':'B'}));g.appendChild(mk('line',{x1:12,y1:8,x2:28,y2:20,stroke:'#7e6b9e','stroke-width':3,class:'tw-branch', 'data-branch':'C'}));
+   g.appendChild(mk('circle',{cx:0,cy:0,r:15,class:'box',stroke,fill:fillColor}));g.appendChild(mk('line',{x1:0,y1:-15,x2:0,y2:-30,stroke:'#7e6b9e','stroke-width':3,class:'tw-branch', 'data-branch':'A'}));g.appendChild(mk('line',{x1:-12,y1:8,x2:-28,y2:20,stroke:'#7e6b9e','stroke-width':3,class:'tw-branch', 'data-branch':'B'}));g.appendChild(mk('line',{x1:12,y1:8,x2:28,y2:20,stroke:'#7e6b9e','stroke-width':3,class:'tw-branch', 'data-branch':'C'}));g.appendChild(mk('line',{x1:12,y1:-5,x2:34,y2:-12,stroke:'#c9d9e8','stroke-width':3,class:'tw-outlet'}));
  }else if(kind==='utilityPower'){
    g.appendChild(mk('rect',{x:-30,y:-24,width:60,height:48,rx:6,class:'box',stroke,fill:fillColor}));
    g.appendChild(mk('path',{d:'M -4 -17 L 7 -4 L 0 -4 L 6 16 L -9 1 L -1 1 Z',fill:stroke}));
@@ -811,8 +1043,59 @@ function createComponent(kind,p,customDef=null){
    g.appendChild(mk('line',{x1:-22,y1:-11,x2:0,y2:0,stroke,'stroke-width':3}));
    g.appendChild(mk('line',{x1:-22,y1:11,x2:0,y2:0,stroke,'stroke-width':3}));
    g.appendChild(mk('line',{x1:0,y1:0,x2:22,y2:0,stroke,'stroke-width':3}));
+ }else if(['transferPump','boosterPump'].includes(kind)){
+   g.appendChild(mk('circle',{cx:0,cy:0,r:23,class:'box',stroke,fill:fillColor}));
+   g.appendChild(mk('path',{d:'M -11 12 L -11 -12 L 5 -12 Q 20 -10 16 1 Q 13 11 0 11 Z',stroke,fill:'none','stroke-width':2}));
+   g.appendChild(mk('path',{d:'M -4 -6 L 8 0 L -4 7 Z',fill:stroke}));
+ }else if(['feedSilo','medTank'].includes(kind)){
+   g.appendChild(mk('rect',{x:-23,y:-25,width:46,height:45,rx:7,class:'box',stroke,fill:fillColor}));
+   g.appendChild(mk('ellipse',{cx:0,cy:-25,rx:23,ry:8,stroke,fill:fillColor}));
+   g.appendChild(mk('path',{d:'M -15 20 L -8 33 L 8 33 L 15 20',stroke,fill:'none','stroke-width':2}));
+ }else if(['feedMotor','dosingPump'].includes(kind)){
+   g.appendChild(mk('rect',{x:-27,y:-19,width:54,height:38,rx:8,class:'box',stroke,fill:fillColor}));
+   g.appendChild(mk('circle',{cx:-8,cy:0,r:12,stroke,fill:'none','stroke-width':2}));
+   g.appendChild(mk('line',{x1:5,y1:0,x2:28,y2:0,stroke,'stroke-width':3}));
+ }else if(kind==='feedCorner'){
+   g.appendChild(mk('path',{d:'M -26 20 L -7 20 L -7 -9 L 27 -9',stroke,'stroke-width':9,fill:'none','stroke-linejoin':'round'}));
+   g.appendChild(mk('path',{d:'M -26 20 L -7 20 L -7 -9 L 27 -9',stroke:'#172d39','stroke-width':3,fill:'none'}));
+ }else if(kind==='feedDrop'){
+   g.appendChild(mk('path',{d:'M -19 -23 L 19 -23 L 12 8 L 5 8 L 5 26 L -5 26 L -5 8 L -12 8 Z',stroke,fill:fillColor,'stroke-width':2}));
+ }else if(kind==='nippleDrinker'){
+   g.appendChild(mk('line',{x1:-20,y1:-10,x2:13,y2:-10,stroke,'stroke-width':5}));
+   g.appendChild(mk('line',{x1:13,y1:-10,x2:13,y2:12,stroke,'stroke-width':4}));
+   g.appendChild(mk('circle',{cx:13,cy:18,r:6,stroke,fill:fillColor}));
+ }else if(kind==='feedSensor'){
+   g.appendChild(mk('rect',{x:-20,y:-24,width:40,height:48,rx:5,class:'box',stroke,fill:fillColor}));
+   g.appendChild(mk('circle',{cx:0,cy:0,r:11,stroke,fill:'none','stroke-width':2}));
+ }else if(kind==='pressureTank'){
+   g.appendChild(mk('rect',{x:-23,y:-26,width:46,height:55,rx:18,class:'box',stroke,fill:fillColor}));
+   g.appendChild(mk('line',{x1:-17,y1:3,x2:17,y2:3,stroke,'stroke-width':2}));
+ }else if(kind==='waterFilter'){
+   g.appendChild(mk('rect',{x:-23,y:-27,width:46,height:54,rx:7,class:'box',stroke,fill:fillColor}));
+   for(let i=-12;i<=12;i+=8)g.appendChild(mk('line',{x1:i,y1:-16,x2:i+9,y2:14,stroke,'stroke-width':1.5}));
+ }else if(kind==='waterMeter'){
+   g.appendChild(mk('circle',{cx:0,cy:0,r:24,class:'box',stroke,fill:fillColor}));
+   g.appendChild(mk('path',{d:'M -13 8 A 17 17 0 0 1 13 8',fill:'none',stroke,'stroke-width':2}));
+   g.appendChild(mk('line',{x1:0,y1:3,x2:11,y2:-7,stroke,'stroke-width':2}));
+ }else if(['checkValve','shutoffValve'].includes(kind)){
+   g.appendChild(mk('rect',{x:-30,y:-20,width:60,height:40,rx:6,class:'box',stroke,fill:fillColor}));
+   g.appendChild(mk('path',{d:'M -19 -13 L 0 0 L -19 13 Z M 19 -13 L 0 0 L 19 13 Z',fill:'none',stroke,'stroke-width':2.5}));
+   if(kind==='checkValve')g.appendChild(mk('line',{x1:19,y1:-13,x2:19,y2:13,stroke,'stroke-width':3}));
+ }else if(kind==='levelSensor'){
+   g.appendChild(mk('rect',{x:-22,y:-27,width:44,height:54,rx:8,class:'box',stroke,fill:fillColor}));
+   g.appendChild(mk('path',{d:'M -15 9 H 15 M -15 -5 H 15',stroke,'stroke-width':2}));
+   g.appendChild(mk('circle',{cx:0,cy:9,r:5,fill:stroke}));
  }else if(kind==='waterTower'){
    g.appendChild(mk('rect',{x:-24,y:-22,width:48,height:42,rx:7,class:'box',stroke,fill:fillColor}));g.appendChild(mk('ellipse',{cx:0,cy:-22,rx:24,ry:7,stroke,fill:fillColor}));g.appendChild(mk('line',{x1:-14,y1:20,x2:-18,y2:31,stroke,'stroke-width':3}));g.appendChild(mk('line',{x1:14,y1:20,x2:18,y2:31,stroke,'stroke-width':3}));
+ }else if(kind==='groundWell'){
+   g.appendChild(mk('rect',{x:-25,y:-20,width:50,height:43,rx:4,class:'box',stroke,fill:fillColor}));
+   g.appendChild(mk('ellipse',{cx:0,cy:-20,rx:24,ry:9,stroke,fill:fillColor}));
+   g.appendChild(mk('line',{x1:-13,y1:-8,x2:-13,y2:16,stroke,'stroke-width':2}));
+   g.appendChild(mk('line',{x1:13,y1:-8,x2:13,y2:16,stroke,'stroke-width':2}));
+ }else if(['cityOutlet','groundOutlet','towerOutlet'].includes(kind)){
+   g.appendChild(mk('circle',{cx:0,cy:0,r:23,class:'box',stroke,fill:fillColor}));
+   g.appendChild(mk('line',{x1:-17,y1:0,x2:13,y2:0,stroke,'stroke-width':3}));
+   g.appendChild(mk('polygon',{points:'20,0 7,-9 7,9',fill:stroke}));
  }else if(kind==='groundWater'){
    g.appendChild(mk('circle',{cx:0,cy:0,r:23,class:'box',stroke,fill:fillColor}));g.appendChild(mk('circle',{cx:0,cy:0,r:12,stroke,fill:'none'}));
  }else if(kind==='cityWater'){
@@ -832,7 +1115,7 @@ qs('selectionHandlesLayer').addEventListener('mousedown',e=>{
  const h=e.target.closest?.('[data-transform-handle]');if(!h)return;
  beginComponentHandleDrag(e,h.dataset.transformHandle);
 });
-svg.addEventListener('dragover',e=>e.preventDefault());svg.addEventListener('drop',e=>{e.preventDefault();const kind=e.dataTransfer.getData('text/component');if(kind)createComponent(kind,pt(e));});
+svg.addEventListener('dragover',e=>e.preventDefault());svg.addEventListener('drop',e=>{e.preventDefault();const kind=e.dataTransfer.getData('text/component');if(kind){viewPreset='all';deviceTypeFilter=null;singleDeviceUid='';if(qs('buildingFilter'))qs('buildingFilter').value='all';['componentChk','ventChk'].forEach(id=>{if(qs(id))qs(id).checked=true});const g=createComponent(kind,pt(e));applyViewFilters();renderDeviceFilters();fill(g);status.textContent='已放置：'+(g.dataset.name||kind)}});
 svg.addEventListener('wheel',e=>{e.preventDefault();zoom*=e.deltaY<0?1.1:.9;zoom=Math.max(.3,Math.min(4,zoom));tf()},{passive:false});
 svg.addEventListener('mousedown',e=>{
  if(tool==='pan'||e.button===1||spacePan||(e.button===0&&e.ctrlKey)){panning=true;panStart={cx:e.clientX,cy:e.clientY,x:pan.x,y:pan.y};e.preventDefault();return}
@@ -846,7 +1129,7 @@ svg.addEventListener('mousedown',e=>{
    if(comp){hideObjectDetail();fill(comp);if(objectLocked(comp)){status.textContent='🔒 已鎖定：'+(comp.dataset.name||'設備')+'；按鎖頭可解鎖';return}const cp=componentXY(comp);dragObj={el:comp,start:p,orig:cp};return}
    if(e.target.classList.contains('editable')){hideObjectDetail();fill(e.target)}else{fill(null);hideObjectDetail()}return;
  }
- if(tool==='water'||tool==='electric'){
+ if(tool==='water'||tool==='electric'||tool==='feed'){
    const snap=nearestSnap(p),q=snap?{x:snap.x,y:snap.y}:p;
    if(!routeDraw)beginRoute(tool,q,snap);else addRoutePoint(q,snap,e);
    return;
@@ -855,7 +1138,7 @@ svg.addEventListener('mousedown',e=>{
  if(tool==='text'){const txt=prompt('輸入文字：');if(txt){const t=mk('text',{x:p.x,y:p.y,class:'user-text editable'});t.textContent=txt;t.dataset.user='1';t.dataset.name=txt;qs('annoLayer').appendChild(t);fill(t);refreshList();autosave();}}
 });
 svg.addEventListener('mousemove',e=>{const p=pt(e);if(panning){pan.x=panStart.x+(e.clientX-panStart.cx)/zoom;pan.y=panStart.y+(e.clientY-panStart.cy)/zoom;tf();return}if(handleDrag){updateComponentHandleDrag(e);return}
- const snap=nearestSnap(p);if(tool==='water'||tool==='electric')showSnap(snap);else showSnap(null);
+ const snap=nearestSnap(p);if(tool==='water'||tool==='electric'||tool==='feed')showSnap(snap);else showSnap(null);
  if(routeDraw){const last=routeDraw.points[routeDraw.points.length-1],raw=snap?{x:snap.x,y:snap.y}:p,q=snap?raw:freeRoutePoint(last,raw,e);const pts=[...routeDraw.points,q];setRoutePoints(routeDraw.el,pts);updateRouteAngleBadge(last,q);return}
  if(dragObj?.routeEl){const pts=routePoints(dragObj.routeEl);let q=snap?{x:snap.x,y:snap.y}:p;if(qs('routeMode').value==='ortho'&&dragObj.nodeIndex>0&&dragObj.nodeIndex<pts.length-1){const prev=pts[dragObj.nodeIndex-1],next=pts[dragObj.nodeIndex+1];if(Math.abs(prev.x-next.x)<Math.abs(prev.y-next.y))q.x=prev.x;else q.y=prev.y;}pts[dragObj.nodeIndex]=q;setRoutePoints(dragObj.routeEl,pts);renderRouteNodes(dragObj.routeEl);fields.routeLength.value=dragObj.routeEl.dataset.length+' 圖面單位';fields.realLength.value=dragObj.routeEl.dataset.realLength?dragObj.routeEl.dataset.realLength+' m':'尚未校正';refreshStats();return}
  if(dragObj){const raw={x:dragObj.orig.x+(p.x-dragObj.start.x),y:dragObj.orig.y+(p.y-dragObj.start.y)},sp=snapGridPoint(raw),ap=smartAlignPoint(sp,dragObj.el,true),nx=ap.x,ny=ap.y;dragObj.el.dataset.x=nx.toFixed(1);dragObj.el.dataset.y=ny.toFixed(1);applyComponentVisual(dragObj.el);fields.x.value=nx.toFixed(1);fields.y.value=ny.toFixed(1);updateConnectedRoutes(dragObj.el.dataset.uid);renderComponentHandles(dragObj.el);positionObjectDetail();positionSelectionActionBar();return}if(!draw)return;if(draw.kind==='rect'){draw.el.setAttribute('x',Math.min(draw.start.x,p.x));draw.el.setAttribute('y',Math.min(draw.start.y,p.y));draw.el.setAttribute('width',Math.abs(p.x-draw.start.x));draw.el.setAttribute('height',Math.abs(p.y-draw.start.y))}});
@@ -870,14 +1153,30 @@ document.addEventListener('keydown',e=>{
  if((e.key==='Delete'||e.key==='Backspace')&&!editing&&selected?.dataset?.user==='1'){
    e.preventDefault();requestDeleteObject(selected);return;
  }
- if(e.key==='Escape'&&qs('deviceSearchPanel')?.classList.contains('show')){closeDeviceSearch();return}
- if(e.key==='Escape'&&qs('customDeviceModal')?.classList.contains('show')){closeCustomDeviceModal();return}
- if(e.key==='Escape'&&qs('deleteConfirmModal')?.classList.contains('show')){closeDeleteConfirm();return}
+ if(e.key==='Escape'&&qs('deviceSearchPanel')?.classList.contains('show')){closeDeviceSearch();setTool('select');return}
+ if(e.key==='Escape'&&qs('customDeviceModal')?.classList.contains('show')){closeCustomDeviceModal();setTool('select');return}
+ if(e.key==='Escape'&&qs('deleteConfirmModal')?.classList.contains('show')){closeDeleteConfirm();setTool('select');return}
 
  if(e.code==='Space'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){spacePan=true;document.body.classList.add('space-pan-ready');e.preventDefault()}
  if(e.key==='Control')document.body.classList.add('ctrl-pan-ready');
  if(e.key==='Enter'&&routeDraw){finishRoute(false)}
- if(e.key==='Escape'){document.body.classList.remove('device-menu-open');qs('quickDeviceBar')?.setAttribute('aria-hidden','true');qs('quickDeviceMenuBtn')?.classList.remove('active');if(routeDraw)finishRoute(true);if(pendingComponent)setPendingComponent('');if(pendingDuplicateSource)cancelDuplicatePlacement()}
+ if(e.key==='Escape'){
+  // Esc：退出編輯工具，回到選取；一般表單保留輸入內容。
+  if(editing){return}
+  e.preventDefault();
+  document.body.classList.remove('device-menu-open','pan-tool-ready','space-pan-ready','ctrl-pan-ready');
+  qs('quickDeviceBar')?.setAttribute('aria-hidden','true');
+  qs('quickDeviceMenuBtn')?.classList.remove('active');
+  if(routeDraw)finishRoute(true);
+  if(draw){draw.el?.remove();draw=null}
+  if(pendingComponent)setPendingComponent('');
+  if(pendingDuplicateSource)cancelDuplicatePlacement();
+  calibrationPts=[];measurePts=[];
+  spacePan=false;panning=false;panStart=null;
+  showSnap(null);clearAlignmentGuides();
+  setTool('select');
+  status.textContent='已返回選取工具，可點選或拖移設備。';
+}
 });
 document.addEventListener('keyup',e=>{
  if(e.code==='Space'){spacePan=false;document.body.classList.remove('space-pan-ready')}
@@ -887,11 +1186,24 @@ window.addEventListener('blur',()=>{spacePan=false;document.body.classList.remov
 
 qs('routeTouchUndoBtn').onclick=e=>{e.preventDefault();e.stopPropagation();undoRoutePoint()};
 qs('selectionDuplicateBtn').onclick=e=>{e.preventDefault();e.stopPropagation();startDuplicatePlacement(selected)};
-qs('buildingJump').onchange=e=>{const v=e.target.value;if(v){zoomToBuilding(v);e.target.value=''}};qs('viewBackBtn').onclick=goBackView;qs('quickSearchBtn').onclick=e=>{e.preventDefault();e.stopPropagation();toggleDeviceSearch()};qs('deviceSearchCloseBtn').onclick=closeDeviceSearch;qs('deviceSearchInput').addEventListener('input',e=>renderDeviceSearch(e.target.value));qs('deviceSearchInput').addEventListener('keydown',e=>{if(e.key==='Enter'){const first=qs('deviceSearchResults')?.querySelector('button');if(first){e.preventDefault();first.click()}}});
+qs('buildingJump').onchange=e=>{const v=e.target.value;if(v){zoomToBuilding(v);e.target.value=''}};qs('viewBackBtn').onclick=goBackView;qs('deviceSearchCloseBtn').onclick=closeDeviceSearch;qs('deviceSearchInput').addEventListener('input',e=>renderDeviceSearch(e.target.value));qs('deviceSearchInput').addEventListener('keydown',e=>{if(e.key==='Enter'){const first=qs('deviceSearchResults')?.querySelector('button');if(first){e.preventDefault();first.click()}}});
 qs('routeTouchFinishBtn').onclick=e=>{e.preventDefault();e.stopPropagation();if(routeDraw)finishRoute(false)};qs('routeTouchCancelBtn').onclick=e=>{e.preventDefault();e.stopPropagation();if(routeDraw)finishRoute(true)};
 qs('plus').onclick=()=>{zoom=Math.min(4,zoom*1.15);tf()};qs('minus').onclick=()=>{zoom=Math.max(.3,zoom/1.15);tf()};qs('fitBtn').onclick=()=>{pushViewState();zoom=1;pan={x:0,y:0};tf()};qs('resetBtn').onclick=()=>{zoom=1;pan={x:0,y:0};tf()};
-function componentCategory(c){const k=c.dataset.kind||'';if(k==='customDevice')return c.dataset.customCategory||'other';if(['waterTower','cityWater','groundWater','threeWay'].includes(k))return 'water';if(['utilityPower','generator','ats','mainSwitch','mainPanel','subPanel','equipmentPanel'].includes(k))return 'electric';if(['coolingPad','exhaustFan','guideFan','coolingPump','heatLamp'].includes(k))return 'vent';return 'other'}
+function componentCategory(c){const k=c.dataset.kind||'';if(k==='customDevice')return c.dataset.customCategory||'other';if(['nippleDrinker','medTank','dosingPump','waterTower','cityWater','groundWater','groundWell','cityOutlet','groundOutlet','towerOutlet','threeWay','transferPump','boosterPump','pressureTank','waterFilter','waterMeter','checkValve','shutoffValve','levelSensor'].includes(k))return 'water';if(['utilityPower','generator','ats','mainSwitch','mainPanel','subPanel','equipmentPanel'].includes(k))return 'electric';if(['coolingPad','exhaustFan','guideFan','coolingPump','heatLamp'].includes(k))return 'vent';return 'other'}
 
+const QUICK_FILTER_KINDS={
+ feed:new Set(['feedSilo','feedMotor','feedCorner','feedDrop','feedSensor']),
+ pump:new Set(['transferPump','boosterPump','coolingPump','dosingPump']),
+ valve:new Set(['threeWay','checkValve','shutoffValve']),
+ sensor:new Set(['levelSensor','feedSensor','waterMeter'])
+};
+const QUICK_FILTER_BUTTONS={all:'viewAllBtn',water:'viewWaterBtn',electric:'viewElectricBtn',vent:'viewVentBtn',waste:'viewWasteBtn',feed:'viewFeedBtn',pump:'viewPumpBtn',valve:'viewValveBtn',sensor:'viewSensorBtn'};
+function quickFilterMatch(c,preset){
+ if(preset==='all')return true;
+ const kind=c.dataset.kind||'',cat=componentCategory(c);
+ if(QUICK_FILTER_KINDS[preset])return QUICK_FILTER_KINDS[preset].has(kind)||(kind==='customDevice'&&c.dataset.customCategory===preset);
+ return cat===preset||(preset==='electric'&&cat==='vent');
+}
 function deviceFilterKey(c){
  if(!c?.classList?.contains('component'))return'';
  if(c.dataset.kind==='customDevice')return'custom:'+((c.dataset.name||'自訂設備').trim());
@@ -936,35 +1248,78 @@ function applyViewFilters(){
  const b=qs('buildingFilter')?.value||'all';
  document.querySelectorAll('.component[data-user="1"]').forEach(c=>{
    const cat=componentCategory(c);
-   let ok=viewPreset==='all'||cat===viewPreset||(viewPreset==='electric'&&cat==='vent');
+   let ok=quickFilterMatch(c,viewPreset);
    if(b!=='all'){const cb=(c.dataset.building||'').trim();ok=ok&&cb.includes(b)}
    if(singleDeviceUid)ok=ok&&c.dataset.uid===singleDeviceUid;
    else if(deviceTypeFilter instanceof Set)ok=ok&&deviceTypeFilter.has(deviceFilterKey(c));
    c.style.display=ok?'':'none';
  });
  const show=(id,on)=>{const el=qs(id);if(el)el.style.display=on?'':'none'};
- if(viewPreset==='water'){show('waterLayer',true);show('elecLayer',false);show('ventLayer',false)}
- else if(viewPreset==='electric'){show('waterLayer',false);show('elecLayer',true);show('ventLayer',true)}
- else if(viewPreset==='vent'){show('waterLayer',false);show('elecLayer',false);show('ventLayer',true)}
- else if(viewPreset==='waste'){show('waterLayer',true);show('elecLayer',false);show('ventLayer',false)}
- else{show('waterLayer',qs('waterChk').checked);show('elecLayer',qs('elecChk').checked);show('ventLayer',qs('ventChk').checked)}
- ['viewAllBtn','viewWaterBtn','viewElectricBtn','viewVentBtn','viewWasteBtn'].forEach(id=>qs(id)?.classList.remove('preset-active'));
- const map={all:'viewAllBtn',water:'viewWaterBtn',electric:'viewElectricBtn',vent:'viewVentBtn',waste:'viewWasteBtn'};qs(map[viewPreset])?.classList.add('preset-active');
+ if(viewPreset==='feed'){show('feedLayer',true);show('waterLayer',false);show('elecLayer',false);show('ventLayer',false)}
+ else if(['pump','valve','sensor'].includes(viewPreset)){show('feedLayer',false);show('waterLayer',false);show('elecLayer',false);show('ventLayer',false)}
+ if(viewPreset==='water'){show('feedLayer',false);show('waterLayer',true);show('elecLayer',false);show('ventLayer',false)}
+ else if(viewPreset==='electric'){show('feedLayer',false);show('waterLayer',false);show('elecLayer',true);show('ventLayer',true)}
+ else if(viewPreset==='vent'){show('feedLayer',false);show('waterLayer',false);show('elecLayer',false);show('ventLayer',true)}
+ else if(viewPreset==='waste'){show('feedLayer',false);show('waterLayer',true);show('elecLayer',false);show('ventLayer',false)}
+ else{show('feedLayer',qs('feedChk').checked);show('waterLayer',qs('waterChk').checked);show('elecLayer',qs('elecChk').checked);show('ventLayer',qs('ventChk').checked)}
+ Object.values(QUICK_FILTER_BUTTONS).forEach(id=>{const btn=qs(id);if(!btn)return;const active=id===QUICK_FILTER_BUTTONS[viewPreset];btn.classList.toggle('preset-active',active);btn.setAttribute('aria-pressed',String(active))});
 }
 qs('viewAllBtn').onclick=()=>{viewPreset='all';applyViewFilters()};
 qs('viewWaterBtn').onclick=()=>{viewPreset='water';applyViewFilters()};
 qs('viewElectricBtn').onclick=()=>{viewPreset='electric';applyViewFilters()};
 qs('viewVentBtn').onclick=()=>{viewPreset='vent';applyViewFilters()};
 qs('viewWasteBtn').onclick=()=>{viewPreset='waste';applyViewFilters()};
+qs('viewSensorBtn').onclick=()=>{viewPreset='sensor';applyViewFilters()};
+qs('viewValveBtn').onclick=()=>{viewPreset='valve';applyViewFilters()};
+qs('viewPumpBtn').onclick=()=>{viewPreset='pump';applyViewFilters()};
+qs('viewFeedBtn').onclick=()=>{viewPreset='feed';applyViewFilters()};
+
+// Custom view groups: browser-local UI preference, never modifies or deletes devices.
+const CUSTOM_VIEW_KEY='huwei-cad-quick-presets-v1';
+function getCustomViews(){try{const a=JSON.parse(localStorage.getItem(CUSTOM_VIEW_KEY)||'[]');return Array.isArray(a)?a.filter(p=>p&&typeof p.name==='string'&&Array.isArray(p.keys)).slice(0,30):[]}catch{return[]}}
+function setCustomViews(p){try{localStorage.setItem(CUSTOM_VIEW_KEY,JSON.stringify(p));return true}catch{return false}}
+function customViewMessage(message){const s=qs('customViewStatus');if(s)s.textContent=message}
+function refreshCustomViewPick(preferred){const p=qs('customViewPick');if(!p)return;const old=preferred??p.value;p.replaceChildren(new Option('選擇已儲存組合…',''));getCustomViews().forEach(v=>p.add(new Option(v.name,v.name)));p.value=getCustomViews().some(v=>v.name===old)?old:''}
+qs('customViewSave')?.addEventListener('click',()=>{
+ const name=(qs('customViewName')?.value||'').trim();if(!name){customViewMessage('請先輸入組合名稱');return}
+ const visible=[...document.querySelectorAll('.device-filter-chip.active')].map(b=>b.dataset.filterKey).filter(Boolean);
+ const keys=deviceTypeFilter instanceof Set?[...deviceTypeFilter]:deviceTypeFilter===null?[...document.querySelectorAll('.device-filter-chip')].map(b=>b.dataset.filterKey):visible;
+ if(!keys.length){customViewMessage('請先在「設備項目」選擇至少一種設備');return}
+ const all=getCustomViews(),existing=all.findIndex(x=>x.name===name);const v={name,keys};if(existing>=0)all[existing]=v;else all.push(v);
+ if(all.length>30){customViewMessage('最多可儲存 30 個檢視組合');return}
+ if(!setCustomViews(all)){customViewMessage('瀏覽器無法儲存此組合');return}
+ refreshCustomViewPick(name);customViewMessage('已儲存「'+name+'」；點「套用」即可檢視');
+});
+qs('customViewApply')?.addEventListener('click',()=>{
+ const v=getCustomViews().find(x=>x.name===qs('customViewPick')?.value);if(!v){customViewMessage('請先選擇組合');return}
+ viewPreset='all';singleDeviceUid='';if(qs('deviceSingleFilter'))qs('deviceSingleFilter').value='';
+ deviceTypeFilter=new Set(v.keys);applyViewFilters();renderDeviceFilters();
+ if(qs('customViewName'))qs('customViewName').value=v.name;
+ customViewMessage('已套用「'+v.name+'」：顯示 '+v.keys.length+' 種設備類型');
+});
+qs('customViewDelete')?.addEventListener('click',()=>{
+ const name=qs('customViewPick')?.value;if(!name){customViewMessage('請先選擇要刪除的組合');return}
+ if(!confirm('刪除自訂檢視「'+name+'」？不會刪除圖面設備。'))return;
+ const a=getCustomViews().filter(x=>x.name!==name);if(!setCustomViews(a)){customViewMessage('刪除失敗');return}
+ refreshCustomViewPick('');customViewMessage('已刪除檢視組合，圖面設備沒有變動');
+});
+refreshCustomViewPick();
+
 qs('deviceFilterAllBtn').onclick=()=>{deviceTypeFilter=null;singleDeviceUid='';qs('deviceSingleFilter').value='';applyViewFilters();renderDeviceFilters()};
 qs('deviceFilterNoneBtn').onclick=()=>{deviceTypeFilter=new Set();singleDeviceUid='';qs('deviceSingleFilter').value='';applyViewFilters();renderDeviceFilters()};
 qs('deviceSingleFilter').onchange=e=>{singleDeviceUid=e.target.value||'';if(singleDeviceUid)deviceTypeFilter=null;applyViewFilters();renderDeviceFilters()};
 qs('buildingFilter').onchange=applyViewFilters;
-[['cadBaseChk','cadBase'],['whiteRefChk','whiteRef'],['hotspotChk','hotspots'],['waterChk','waterLayer'],['elecChk','elecLayer'],['componentChk','componentLayer'],['ventChk','ventLayer'],['annoChk','annoLayer']].forEach(([c,l])=>qs(c).onchange=e=>{qs(l).style.display=e.target.checked?'':'none';if(['waterChk','elecChk','ventChk'].includes(c)&&viewPreset!=='all')applyViewFilters()});
+[['cadBaseChk','cadBase'],['whiteRefChk','whiteRef'],['feedChk','feedLayer'],['hotspotChk','hotspots'],['waterChk','waterLayer'],['elecChk','elecLayer'],['componentChk','componentLayer'],['ventChk','ventLayer'],['annoChk','annoLayer']].forEach(([c,l])=>qs(c).onchange=e=>{qs(l).style.display=e.target.checked?'':'none';if(['waterChk','elecChk','ventChk'].includes(c)&&viewPreset!=='all')applyViewFilters()});
 qs('modeBtn').onclick=()=>{const dark=qs('cadBase').style.display!=='none';if(dark){qs('cadBase').style.display='none';qs('whiteRef').style.display='';qs('cadBaseChk').checked=false;qs('whiteRefChk').checked=true;qs('modeBtn').textContent='底圖：白底確認圖'}else{qs('cadBase').style.display='';qs('whiteRef').style.display='none';qs('cadBaseChk').checked=true;qs('whiteRefChk').checked=false;qs('modeBtn').textContent='底圖：深色CAD'}};
-qs('applyBtn').onclick=()=>{if(!selected)return alert('請先選物件');selected.dataset.name=fields.name.value;selected.dataset.mainFunction=fields.mainFunction.value.trim()||objectMainFunction(selected);selected.dataset.note=fields.note.value;selected.dataset.building=fields.building.value;selected.dataset.sourceA=fields.sourceA.value;selected.dataset.sourceB=fields.sourceB.value;selected.dataset.target=fields.target.value;selected.dataset.spec=fields.spec.value;selected.dataset.lineSize=fields.lineSize.value;selected.dataset.powerKw=fields.powerKw.value;selected.dataset.airflow=fields.airflow.value;selected.dataset.staticPa=fields.staticPa.value;selected.dataset.emergencyClass=fields.emergencyClass.value;selected.dataset.switchState=fields.switchState.value;selected.dataset.backup=fields.backup.value;
- if(selected.classList.contains('component')){saveSourceConfig();const nx=parseFloat(fields.x.value)||0,ny=parseFloat(fields.y.value)||0,rot=parseFloat(fields.rotation.value)||0,sc=Math.max(.2,Math.min(5,parseFloat(fields.iconScale.value)||0.8)),sx=Math.max(.3,Math.min(3,parseFloat(fields.shapeScaleX.value)||1)),sy=Math.max(.3,Math.min(3,parseFloat(fields.shapeScaleY.value)||1)),lsc=Math.max(.4,Math.min(3,parseFloat(fields.labelScale.value)||0.9));selected.dataset.x=nx.toFixed(1);selected.dataset.y=ny.toFixed(1);selected.dataset.rotation=rot.toFixed(0);selected.dataset.iconScale=sc.toFixed(2);selected.dataset.shapeScaleX=sx.toFixed(2);selected.dataset.shapeScaleY=sy.toFixed(2);selected.dataset.shapeLock=fields.shapeLock.value||'yes';selected.dataset.labelScale=lsc.toFixed(1);selected.dataset.showLabel=fields.showLabel.value||'yes';applyComponentVisual(selected);const lab=selected.querySelector('.component-label');if(lab)lab.textContent=fields.name.value;if(selected.dataset.kind==='customDevice')applyCustomDeviceAppearance(selected);if(selected.dataset.kind==='threeWay'){if(fields.switchState.value){const s=fields.switchState.value;selected.dataset.valveActivePort=s===selected.dataset.valveSourceB?'B':s===selected.dataset.valveSourceC?'C':'A';}updateThreeWayVisual(selected);applyComponentVisual(selected);syncValvePanel(selected);}updateConnectedRoutes(selected.dataset.uid);}
- autosave();refreshList();if(selected.classList?.contains('component'))applyComponentVisual(selected);showObjectDetail(selected);status.textContent='已套用：'+selected.dataset.name;};
+qs('applyBtn').onclick=()=>{if(!selected)return alert('請先選物件');
+ if(!fields.name.value.trim()){alert('請填寫設備名稱，才能儲存。');fields.name.focus();return;}
+ fields.name.value=fields.name.value.trim();
+ if(selected.classList.contains('component'))for(const key of ['x','y','rotation']){const fld=fields[key];if(!fld||!fld.value.trim()||!Number.isFinite(Number(fld.value))){alert('請輸入有效的數值：'+(fld?.closest('.prop-row')?.querySelector('label')?.textContent||key));fld?.focus();return;}}
+ const ranges=[['iconScale',.2,5],['shapeScaleX',.3,3],['shapeScaleY',.3,3],['labelScale',.4,3]];
+ if(selected.classList.contains('component'))for(const [key,min,max] of ranges){const fld=fields[key];if(!fld||fld.value==='')continue;const val=Number(fld.value);if(!Number.isFinite(val)||val<min||val>max){alert('數值超出允許範圍：'+(fld.closest('.prop-row')?.querySelector('label')?.textContent||key)+'（'+min+'～'+max+'）');fld.focus();return;}}
+selected.dataset.name=fields.name.value;selected.dataset.mainFunction=fields.mainFunction.value.trim()||objectMainFunction(selected);selected.dataset.note=fields.note.value;selected.dataset.building=fields.building.value;selected.dataset.sourceA=fields.sourceA.value;selected.dataset.sourceB=fields.sourceB.value;selected.dataset.target=fields.target.value;selected.dataset.spec=fields.spec.value;selected.dataset.lineSize=fields.lineSize.value;selected.dataset.powerKw=fields.powerKw.value;selected.dataset.airflow=fields.airflow.value;selected.dataset.staticPa=fields.staticPa.value;selected.dataset.emergencyClass=fields.emergencyClass.value;selected.dataset.switchState=fields.switchState.value;selected.dataset.backup=fields.backup.value;
+ if(selected.classList.contains('component')){saveSourceConfig(true);const nx=parseFloat(fields.x.value)||0,ny=parseFloat(fields.y.value)||0,rot=parseFloat(fields.rotation.value)||0,sc=Math.max(.2,Math.min(5,parseFloat(fields.iconScale.value)||0.8)),sx=Math.max(.3,Math.min(3,parseFloat(fields.shapeScaleX.value)||1)),sy=Math.max(.3,Math.min(3,parseFloat(fields.shapeScaleY.value)||1)),lsc=Math.max(.4,Math.min(3,parseFloat(fields.labelScale.value)||0.9));selected.dataset.x=nx.toFixed(1);selected.dataset.y=ny.toFixed(1);selected.dataset.rotation=rot.toFixed(0);selected.dataset.iconScale=sc.toFixed(2);selected.dataset.shapeScaleX=sx.toFixed(2);selected.dataset.shapeScaleY=sy.toFixed(2);selected.dataset.shapeLock=fields.shapeLock.value||'yes';selected.dataset.labelScale=lsc.toFixed(1);selected.dataset.showLabel=fields.showLabel.value||'yes';applyComponentVisual(selected);const lab=selected.querySelector('.component-label');if(lab)lab.textContent=fields.name.value;if(selected.dataset.kind==='customDevice')applyCustomDeviceAppearance(selected);if(selected.dataset.kind==='threeWay'){if(fields.switchState.value){const s=fields.switchState.value;selected.dataset.valveActivePort=s===selected.dataset.valveSourceB?'B':s===selected.dataset.valveSourceC?'C':'A';}updateThreeWayVisual(selected);applyComponentVisual(selected);syncValvePanel(selected);}updateConnectedRoutes(selected.dataset.uid);}
+ autosave();refreshList();if(selected.classList?.contains('component'))applyComponentVisual(selected);fill(selected);showObjectDetail(selected);status.textContent='本機已保存：'+selected.dataset.name+'｜雲端狀態請看上方提示';window.dispatchEvent(new CustomEvent('cad:editor-saved',{detail:{uid:selected.dataset.uid||'',name:selected.dataset.name||''}}));};
 qs('iconSmallerBtn').onclick=()=>{if(!selected||!selected.classList.contains('component'))return alert('請先選取標記設備');fields.iconScale.value=(Math.max(.2,(parseFloat(fields.iconScale.value)||0.8)-0.1)).toFixed(1);qs('applyBtn').click();};
 qs('iconLargerBtn').onclick=()=>{if(!selected||!selected.classList.contains('component'))return alert('請先選取標記設備');fields.iconScale.value=(Math.min(5,(parseFloat(fields.iconScale.value)||0.8)+0.1)).toFixed(1);qs('applyBtn').click();};
 qs('labelToggleBtn').onclick=()=>{if(!selected||!selected.classList.contains('component'))return alert('請先選取標記設備');fields.showLabel.value=(fields.showLabel.value==='no'?'yes':'no');qs('applyBtn').click();};
@@ -1018,7 +1373,79 @@ qs('valveResetSizeBtn').onclick=()=>setValveScale(0.8,true);
 qs('clearUserBtn').onclick=()=>{if(confirm('清除所有後續新增的水線、電線、設備與註記？')){document.querySelectorAll('[data-user="1"]').forEach(n=>n.remove());fill(null);autosave();refreshList()}};
 function serialize(){return [...document.querySelectorAll('[data-user="1"]')].map(el=>({parent:el.parentElement.id,svg:new XMLSerializer().serializeToString(el)}))}
 function dl(fn,content,type){const b=new Blob([content],{type});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=fn;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
-function exportData(){return{version:'6.9.3',zoom,pan,scaleFactor,customLibrary:getCustomLibrary(),elements:serialize()}}
+function exportData(){return{version:'6.9.49',zoom,pan,scaleFactor,customLibrary:getCustomLibrary(),elements:serialize()}}
+// V6.9.31 設備資料保護：下載備份、匯入還原、刪除前保留可復原快照。
+const SAFE_BACKUP_KEY='pigfarmCadSafeBackupV6931';
+function backupSnapshot(){
+  try {localStorage.setItem(SAFE_BACKUP_KEY,JSON.stringify({savedAt:new Date().toISOString(),project:exportData()}));return true;}catch(e){status.textContent='備份暫存失敗：請手動下載配置';return false}
+}
+// V6.9.32：有數量上限的本機歷史版本，每 3 分鐘最多自動記錄一次。
+const HISTORY_STORAGE_KEY='pigfarmCadHistoryV6932';
+let lastTimedSnapshot=0;
+function readSavedVersions(){
+ try {const arr=JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY)||'[]');return Array.isArray(arr)?arr.filter(v=>v&&v.project&&Array.isArray(v.project.elements)).slice(0,8):[]}catch(e){return []}
+}
+function saveVersion(reason='手動還原點',force=false){
+ try {
+  const now=Date.now(); if(!force&&now-lastTimedSnapshot<180000)return false;
+  const project=exportData(); const arr=readSavedVersions();
+  const serialized=JSON.stringify(project);
+  if(arr.length&&JSON.stringify(arr[0].project)===serialized){lastTimedSnapshot=now;return true}
+  const item={id:now,savedAt:new Date(now).toISOString(),reason,project};
+  const keep=[item,...arr].slice(0,8);
+  try {localStorage.setItem(HISTORY_STORAGE_KEY,JSON.stringify(keep))}
+  catch(err){ // 儲存空間不足時僅減少歷史數量，絕不清除當前專案
+   let ok=false;
+   for(let n=keep.length-1;n>=1;n--){try{localStorage.setItem(HISTORY_STORAGE_KEY,JSON.stringify(keep.slice(0,n)));ok=true;break}catch(e){}}
+   if(!ok)throw err;
+  }
+  lastTimedSnapshot=now;return true;
+ }catch(e){status.textContent='歷史版本儲存失敗：請下載 JSON 備份';return false}
+}
+function showHistoryManager(){
+ const el=qs('historyManagerDialog'),list=qs('historyManagerList');if(!el||!list)return;
+ list.textContent='';const versions=readSavedVersions();
+ if(!versions.length){list.textContent='目前還沒有歷史版本。可先按「建立還原點」。'}
+ versions.forEach(v=>{
+  const row=document.createElement('div');row.className='history-entry';
+  const info=document.createElement('div');info.className='history-entry-info';
+  const name=document.createElement('strong');name.textContent=v.reason||'歷史配置';
+  const detail=document.createElement('span');detail.textContent=new Date(v.savedAt).toLocaleString('zh-TW')+' · '+v.project.elements.length+' 個新增物件';
+  const btn=document.createElement('button');btn.type='button';btn.textContent='還原此版本';
+  btn.onclick=()=>{
+   if(!confirm('將以此版本覆蓋目前的新增設備、管線及註記。要繼續嗎？'))return;
+   saveVersion('還原前自動備份',true);backupSnapshot();
+   try{loadData(v.project);resetHistoryFromCurrent();autosave();el.hidden=true;status.textContent='已還原歷史版本：'+detail.textContent}
+   catch(e){alert('還原失敗：'+e.message)}
+  };
+  info.append(name,detail);row.append(info,btn);list.append(row);
+ });
+ el.hidden=false;
+}
+qs('historyManagerBtn')?.addEventListener('click',showHistoryManager);
+qs('historyCloseBtn')?.addEventListener('click',()=>{qs('historyManagerDialog').hidden=true});
+qs('historyManagerDialog')?.addEventListener('click',e=>{if(e.target.id==='historyManagerDialog')e.target.hidden=true});
+qs('historyCreateBtn')?.addEventListener('click',()=>{saveVersion('手動還原點',true);showHistoryManager()});
+qs('historyDownloadBtn')?.addEventListener('click',()=>qs('backupNowBtn')?.click());
+
+qs('backupNowBtn')?.addEventListener('click',()=>{
+  backupSnapshot();saveVersion('下載備份',true);
+  dl('虎尾母豬場設備配置備份.json',JSON.stringify({kind:'huwei-cad-backup',savedAt:new Date().toISOString(),project:exportData()},null,2),'application/json');
+  status.textContent='已產生設備配置備份下載';
+});
+qs('restoreBackupBtn')?.addEventListener('click',()=>qs('restoreBackupFile')?.click());
+qs('restoreBackupFile')?.addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  const raw=JSON.parse(await file.text()), data=raw?.kind==='huwei-cad-backup'?raw.project:raw;
+  if(!data||!Array.isArray(data.elements)||data.elements.length>25000)throw Error('檔案缺少有效的設備配置資料');
+  if(!confirm('還原會取代目前新增的設備、管線與註記。確定繼續？'))return;
+  backupSnapshot();saveVersion('匯入前備份',true);
+  loadData(data);resetHistoryFromCurrent();autosave();
+  status.textContent='已還原備份：設備與管線資料載入完成';
+ }catch(err){alert('備份還原失敗：'+err.message)}
+ finally{e.target.value=''}
+});
 qs('saveBtn').onclick=()=>dl('pigfarm_cad_project_v18.json',JSON.stringify(exportData(),null,2),'application/json');qs('loadBtn').onclick=()=>qs('loadInput').click();qs('loadInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;loadData(JSON.parse(await f.text()));};
 
 function sanitizeObsoleteOverlayArtifacts(){
@@ -1040,10 +1467,10 @@ function sanitizeObsoleteOverlayArtifacts(){
 const CLOUD_CFG_KEY='pigfarmCloudCfgV1';
 let cloudPushTimer=null,cloudApplyingRemote=false,cloudBusy=false,pendingFieldPhoto=null,cloudSheetUrl='',cloudFolderUrl='',cloudPullArmed=false;
 function defaultDeviceName(){const ua=navigator.userAgent||'';if(/iPad/i.test(ua)||(/Macintosh/i.test(ua)&&navigator.maxTouchPoints>1))return'現場 iPad';if(/iPhone/i.test(ua))return'現場 iPhone';if(/Android/i.test(ua))return'現場 Android';return'現場電腦'}
-function loadCloudConfig(){const defaultEndpoint='https://script.google.com/macros/s/AKfycbwNUOGoY0j-XRQpBJ7YODl_nangQzSKZa2GfHmXXZVC7bP2r9suQtgjYvGe690sid1X/exec';let c={endpoint:defaultEndpoint,token:'',projectId:'huwei-pigfarm-main',deviceName:defaultDeviceName(),autoSync:false,revision:0,lastSynced:'',pendingCount:0};try{const s=JSON.parse(localStorage.getItem(CLOUD_CFG_KEY)||'{}');c={...c,...s};if(!String(c.endpoint||'').trim())c.endpoint=defaultEndpoint}catch(e){}return c}
+function loadCloudConfig(){const defaultEndpoint='https://script.google.com/macros/s/AKfycbwNUOGoY0j-XRQpBJ7YODl_nangQzSKZa2GfHmXXZVC7bP2r9suQtgjYvGe690sid1X/exec';let c={endpoint:defaultEndpoint,token:'',projectId:'huwei-pigfarm-main',deviceName:defaultDeviceName(),autoSync:false,revision:0,lastSynced:'',pendingCount:0};try{const s=JSON.parse(localStorage.getItem(CLOUD_CFG_KEY)||'{}');c={...c,...s};c.token='';if(!String(c.endpoint||'').trim())c.endpoint=defaultEndpoint}catch(e){}return c}
 let cloudConfig=loadCloudConfig();
 function saveCloudConfig(){try{localStorage.setItem(CLOUD_CFG_KEY,JSON.stringify(cloudConfig))}catch(e){}updateCloudUi()}
-function cloudConfigured(){return!!(cloudConfig.endpoint&&cloudConfig.token&&cloudConfig.projectId)}
+function cloudConfigured(){return!!(cloudConfig.endpoint&&window.CAD_ADMIN_SESSION&&cloudConfig.projectId)}
 function fmtBytes(n){n=Number(n)||0;if(n<1024)return n+' B';if(n<1048576)return(n/1024).toFixed(1)+' KB';return(n/1048576).toFixed(1)+' MB'}
 function ensureObjectUid(el){if(!el||el.dataset.user!=='1')return'';if(!el.dataset.uid){el.dataset.uid='obj-'+Date.now()+'-'+Math.floor(Math.random()*99999);autosave()}return el.dataset.uid}
 function getDeviceId(){let id='';try{id=localStorage.getItem('pigfarmDeviceId')||''}catch(e){}if(!id){id='dev-'+Date.now()+'-'+Math.random().toString(36).slice(2,9);try{localStorage.setItem('pigfarmDeviceId',id)}catch(e){}}return id}
@@ -1063,13 +1490,13 @@ function markCloudPending(){
  try{localStorage.setItem(CLOUD_CFG_KEY,JSON.stringify(cloudConfig))}catch(e){}
  updateCloudStatusLabel();
 }
-function updateCloudUi(){if(qs('cloudEndpoint'))qs('cloudEndpoint').value=cloudConfig.endpoint||'';if(qs('cloudToken'))qs('cloudToken').value=cloudConfig.token||'';if(qs('cloudProjectId'))qs('cloudProjectId').value=cloudConfig.projectId||'huwei-pigfarm-main';if(qs('cloudDeviceName'))qs('cloudDeviceName').value=cloudConfig.deviceName||defaultDeviceName();if(qs('cloudAutoSync'))qs('cloudAutoSync').checked=!!cloudConfig.autoSync;if(qs('cloudRevision'))qs('cloudRevision').textContent=String(cloudConfig.revision||0);if(qs('cloudLastSync'))qs('cloudLastSync').textContent=cloudConfig.lastSynced?new Date(cloudConfig.lastSynced).toLocaleString('zh-TW'):'尚未同步';try{if(qs('cloudProjectSize'))qs('cloudProjectSize').textContent=fmtBytes(new Blob([JSON.stringify(exportData())]).size)}catch(e){}if(qs('cloudOpenSheetBtn'))qs('cloudOpenSheetBtn').disabled=!cloudSheetUrl;if(qs('cloudOpenFolderBtn'))qs('cloudOpenFolderBtn').disabled=!cloudFolderUrl;if(!cloudConfigured())setCloudDot('');updateCloudStatusLabel()}
-function readCloudForm(){cloudConfig.endpoint=(qs('cloudEndpoint')?.value||'').trim();cloudConfig.token=(qs('cloudToken')?.value||'').trim();cloudConfig.projectId=(qs('cloudProjectId')?.value||'huwei-pigfarm-main').trim()||'huwei-pigfarm-main';cloudConfig.deviceName=(qs('cloudDeviceName')?.value||defaultDeviceName()).trim()||defaultDeviceName();cloudConfig.autoSync=!!qs('cloudAutoSync')?.checked;saveCloudConfig()}
-async function cloudApi(action,data={}){if(!cloudConfigured())throw new Error('請先設定 Apps Script URL 與 Token');const ctrl=new AbortController(),tm=setTimeout(()=>ctrl.abort(),45000);try{const res=await fetch(cloudConfig.endpoint,{method:'POST',redirect:'follow',cache:'no-store',mode:'cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,token:cloudConfig.token,projectId:cloudConfig.projectId,deviceId:getDeviceId(),deviceName:cloudConfig.deviceName,...data}),signal:ctrl.signal});const raw=await res.text();let out;try{out=JSON.parse(raw)}catch(e){throw new Error('Apps Script 回傳不是 JSON；請確認使用 /exec 網址與部署權限。')}if(!out.ok){const err=new Error(out.error||'雲端操作失敗');err.cloud=out;throw err}if(out.sheetUrl)cloudSheetUrl=out.sheetUrl;if(out.folderUrl)cloudFolderUrl=out.folderUrl;return out}catch(err){if(err?.name==='AbortError')throw new Error('雲端連線逾時');if(String(err?.message||err).includes('Failed to fetch'))throw new Error('無法連線 Apps Script。請確認 Web App 已部署為可存取，並使用 /exec 網址。');throw err}finally{clearTimeout(tm)}}
+function updateCloudUi(){if(qs('cloudEndpoint'))qs('cloudEndpoint').value=cloudConfig.endpoint||'';if(qs('cloudToken'))qs('cloudToken').value='';if(qs('cloudProjectId'))qs('cloudProjectId').value=cloudConfig.projectId||'huwei-pigfarm-main';if(qs('cloudDeviceName'))qs('cloudDeviceName').value=cloudConfig.deviceName||defaultDeviceName();if(qs('cloudAutoSync'))qs('cloudAutoSync').checked=!!cloudConfig.autoSync;if(qs('cloudRevision'))qs('cloudRevision').textContent=String(cloudConfig.revision||0);if(qs('cloudLastSync'))qs('cloudLastSync').textContent=cloudConfig.lastSynced?new Date(cloudConfig.lastSynced).toLocaleString('zh-TW'):'尚未同步';try{if(qs('cloudProjectSize'))qs('cloudProjectSize').textContent=fmtBytes(new Blob([JSON.stringify(exportData())]).size)}catch(e){}if(qs('cloudOpenSheetBtn'))qs('cloudOpenSheetBtn').disabled=!cloudSheetUrl;if(qs('cloudOpenFolderBtn'))qs('cloudOpenFolderBtn').disabled=!cloudFolderUrl;if(!cloudConfigured())setCloudDot('');updateCloudStatusLabel()}
+function readCloudForm(){cloudConfig.endpoint=(qs('cloudEndpoint')?.value||'').trim();cloudConfig.token='';cloudConfig.projectId=(qs('cloudProjectId')?.value||'huwei-pigfarm-main').trim()||'huwei-pigfarm-main';cloudConfig.deviceName=(qs('cloudDeviceName')?.value||defaultDeviceName()).trim()||defaultDeviceName();cloudConfig.autoSync=!!qs('cloudAutoSync')?.checked;saveCloudConfig()}
+async function cloudApi(action,data={}){if(!cloudConfigured())throw new Error('請先設定 Apps Script URL 與 Token');const ctrl=new AbortController(),tm=setTimeout(()=>ctrl.abort(),45000);try{const res=await fetch(cloudConfig.endpoint,{method:'POST',redirect:'follow',cache:'no-store',mode:'cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,session:window.CAD_ADMIN_SESSION||'',projectId:cloudConfig.projectId,deviceId:getDeviceId(),deviceName:cloudConfig.deviceName,...data}),signal:ctrl.signal});const raw=await res.text();let out;try{out=JSON.parse(raw)}catch(e){throw new Error('Apps Script 回傳不是 JSON；請確認使用 /exec 網址與部署權限。')}if(!out.ok){const err=new Error(out.error||'雲端操作失敗');err.cloud=out;throw err}if(out.sheetUrl)cloudSheetUrl=out.sheetUrl;if(out.folderUrl)cloudFolderUrl=out.folderUrl;return out}catch(err){if(err?.name==='AbortError')throw new Error('雲端連線逾時');if(String(err?.message||err).includes('Failed to fetch'))throw new Error('無法連線 Apps Script。請確認 Web App 已部署為可存取，並使用 /exec 網址。');throw err}finally{clearTimeout(tm)}}
 function openCloudModal(){qs('cloudModal').classList.add('show');qs('cloudModal').setAttribute('aria-hidden','false');updateCloudUi();setCloudMessage(cloudConfigured()?'已載入此裝置的連線設定。':'請先填入 Apps Script /exec 網址與 Token。',cloudConfigured()?'ok':'')}
 function closeCloudModal(){qs('cloudModal').classList.remove('show');qs('cloudModal').setAttribute('aria-hidden','true')}
 async function testCloud(){if(cloudBusy)return;readCloudForm();cloudBusy=true;setCloudDot('sync');setCloudMessage('正在測試 Apps Script / Google Sheet…');try{const out=await cloudApi('ping');cloudConfig.revision=Number(out.revision||0);saveCloudConfig();setCloudDot('ok');setCloudMessage(`連線成功｜雲端版本 ${cloudConfig.revision}｜伺服器 ${out.serverTime||''}`,'ok')}catch(e){setCloudDot('error');setCloudMessage(e.message||String(e),'error')}finally{cloudBusy=false}}
-async function cloudPush({silent=false,force=false}={}){if(!cloudConfigured()){if(!silent)openCloudModal();return false}if(cloudBusy)return false;cloudBusy=true;updateCloudStatusLabel();if(!silent)setCloudMessage('正在上傳目前圖面到雲端…');try{const project=exportData(),bytes=new Blob([JSON.stringify(project)]).size;const out=await cloudApi('saveProject',{project,baseRevision:Number(cloudConfig.revision||0),force:!!force});cloudConfig.revision=Number(out.revision||cloudConfig.revision||0);cloudConfig.lastSynced=out.updatedAt||new Date().toISOString();cloudConfig.pendingCount=0;saveCloudConfig();updateCloudStatusLabel();if(!silent)setCloudMessage(`上傳完成｜版本 ${cloudConfig.revision}｜${fmtBytes(bytes)}`,'ok');return true}catch(e){setCloudDot('error');if(e.cloud?.conflict){cloudConfig.revision=Number(e.cloud.revision||cloudConfig.revision||0);saveCloudConfig();setCloudMessage(`雲端已有較新版本 ${cloudConfig.revision}，本機沒有覆蓋。請先下載雲端版本。`,'warn')}else if(!silent)setCloudMessage(e.message||String(e),'error');return false}finally{cloudBusy=false;updateCloudStatusLabel()}}
+async function cloudPush({silent=false,force=false}={}){if(!cloudConfigured()){if(!silent)openCloudModal();return false}if(cloudBusy)return false;cloudBusy=true;updateCloudStatusLabel();if(!silent)setCloudMessage('正在上傳目前圖面到雲端…');try{const project=exportData(),bytes=new Blob([JSON.stringify(project)]).size;const out=await cloudApi('saveProject',{project,baseRevision:Number(cloudConfig.revision||0),force:!!force});cloudConfig.revision=Number(out.revision||cloudConfig.revision||0);cloudConfig.lastSynced=out.updatedAt||new Date().toISOString();cloudConfig.pendingCount=0;saveCloudConfig();updateCloudStatusLabel();window.dispatchEvent(new CustomEvent('cad:cloud-published',{detail:{revision:cloudConfig.revision,time:cloudConfig.lastSynced}}));if(!silent)setCloudMessage(`上傳完成｜版本 ${cloudConfig.revision}｜${fmtBytes(bytes)}`,'ok');return true}catch(e){setCloudDot('error');if(e.cloud?.conflict){cloudConfig.revision=Number(e.cloud.revision||cloudConfig.revision||0);saveCloudConfig();setCloudMessage(`雲端已有較新版本 ${cloudConfig.revision}，本機沒有覆蓋。請先下載雲端版本。`,'warn')}else if(!silent)setCloudMessage(e.message||String(e),'error');window.dispatchEvent(new CustomEvent('cad:cloud-failed',{detail:{message:e.message||String(e)}}));return false}finally{cloudBusy=false;updateCloudStatusLabel()}}
 async function cloudPull(){if(!cloudConfigured()){openCloudModal();return}if(!cloudPullArmed){cloudPullArmed=true;qs('cloudPullBtn').textContent='再次按下確認覆蓋本機';setCloudMessage('下載會用雲端圖面覆蓋目前本機圖面；請再按一次確認。','warn');setTimeout(()=>{cloudPullArmed=false;if(qs('cloudPullBtn'))qs('cloudPullBtn').textContent='↓ 下載雲端專案'},5000);return}cloudPullArmed=false;qs('cloudPullBtn').textContent='↓ 下載雲端專案';cloudBusy=true;setCloudDot('sync');setCloudMessage('正在下載雲端圖面…');try{const out=await cloudApi('getProject');if(!out.project)throw new Error('雲端尚未有專案資料');cloudApplyingRemote=true;loadData(out.project);cloudApplyingRemote=false;resetHistoryFromCurrent();cloudConfig.revision=Number(out.revision||0);cloudConfig.lastSynced=out.updatedAt||new Date().toISOString();try{localStorage.setItem('pigfarmCadV69',JSON.stringify(exportData()))}catch(e){}cloudConfig.pendingCount=0;saveCloudConfig();updateCloudStatusLabel();setCloudMessage(`已載入雲端版本 ${cloudConfig.revision}`,'ok')}catch(e){cloudApplyingRemote=false;setCloudDot('error');setCloudMessage(e.message||String(e),'error')}finally{cloudBusy=false}}
 function scheduleCloudPush(){if(cloudApplyingRemote||!cloudConfig.autoSync||!cloudConfigured()||!navigator.onLine)return;clearTimeout(cloudPushTimer);cloudPushTimer=setTimeout(()=>cloudPush({silent:true}),8000)}
 function updateOnlineState(){if(!navigator.onLine){status.textContent='目前離線：圖面仍會儲存在本機，恢復網路後再同步。'}else if(cloudConfigured())scheduleCloudPush();updateCloudStatusLabel()}
@@ -1079,7 +1506,7 @@ async function chooseFieldPhoto(file){if(!file)return;qs('fieldPhotoPending').te
 async function uploadFieldPhoto(){if(cloudBusy)return;if(!selected?.dataset||selected.dataset.user!=='1')return alert('請先選取要附加照片的設備或線路');if(!pendingFieldPhoto)return alert('請先拍照或選照片');if(!cloudConfigured()){openCloudModal();return}const uid=ensureObjectUid(selected),btn=qs('fieldPhotoUploadBtn');cloudBusy=true;btn.disabled=true;btn.textContent='上傳中…';try{const out=await cloudApi('uploadPhoto',{objectUid:uid,objectName:selected.dataset.name||objectTypeText(selected),building:selected.dataset.building||'',note:(qs('fieldPhotoNote').value||'').trim(),fileName:pendingFieldPhoto.fileName,mimeType:pendingFieldPhoto.mimeType,dataUrl:pendingFieldPhoto.dataUrl});pendingFieldPhoto=null;qs('fieldPhotoInput').value='';qs('fieldPhotoNote').value='';qs('fieldPhotoPending').textContent='照片已上傳到 Google Drive';setCloudDot('ok');await loadCloudPhotos(uid);status.textContent='照片已上傳：'+(out.fileName||'現場照片')}catch(e){setCloudDot('error');qs('fieldPhotoPending').textContent='上傳失敗：'+(e.message||e)}finally{cloudBusy=false;btn.disabled=!pendingFieldPhoto;btn.textContent='上傳到 Google Drive'}}
 async function loadCloudPhotos(uid){const list=qs('fieldPhotoList');if(!list)return;if(!cloudConfigured()){list.innerHTML='<div class="tiny">尚未設定雲端；點上方「☁ 雲端」完成設定。</div>';return}list.innerHTML='<div class="tiny">讀取雲端照片…</div>';try{const out=await cloudApi('listPhotos',{objectUid:uid});const photos=out.photos||[];const obj=[...document.querySelectorAll('[data-user="1"]')].find(n=>n.dataset.uid===uid);if(obj){obj.dataset.photoCount=String(photos.length);if(obj===selected)updatePhotoAction(obj)}if(!photos.length){list.innerHTML='<div class="tiny">此物件尚無雲端照片。</div>';return}list.innerHTML=photos.map(p=>`<div class="cloud-photo-item"><div><b>${esc(p.fileName||'照片')}</b><small>${esc(p.note||'無備註')}<br>${esc(p.createdAt||'')}｜${esc(p.deviceName||'')}</small></div><a href="${esc(p.driveUrl||'#')}" target="_blank" rel="noopener">開啟</a></div>`).join('')}catch(e){list.innerHTML='<div class="tiny">照片清單讀取失敗：'+esc(e.message||String(e))+'</div>'}}
 
-function loadData(d){if(Array.isArray(d?.customLibrary))setCustomLibrary(d.customLibrary,false);document.querySelectorAll('[data-user="1"]').forEach(n=>n.remove());(d.elements||[]).forEach(o=>{const doc=new DOMParser().parseFromString(o.svg,'image/svg+xml');const el=document.importNode(doc.documentElement,true);el.dataset.user='1';if(el.classList.contains('component')&&!el.dataset.uid)el.dataset.uid='cmp-'+Date.now()+'-'+Math.floor(Math.random()*99999);(qs(o.parent)||qs('annoLayer')).appendChild(el);if(el.classList.contains('component')){if(!el.dataset.iconScale)el.dataset.iconScale='0.8';if(!el.dataset.shapeScaleX)el.dataset.shapeScaleX='1';if(!el.dataset.shapeScaleY)el.dataset.shapeScaleY='1';if(!el.dataset.shapeLock)el.dataset.shapeLock='yes';if(!el.dataset.labelScale)el.dataset.labelScale='0.9';if(!el.dataset.showLabel)el.dataset.showLabel='yes';if(!el.dataset.locked)el.dataset.locked='no';if(!el.dataset.photoCount)el.dataset.photoCount='0';if(!el.dataset.mainFunction)el.dataset.mainFunction=defaultMainFunctions[el.dataset.kind]||el.dataset.name||'';if(el.dataset.kind==='customDevice'){if(!el.dataset.customIcon)el.dataset.customIcon='⚙';if(!el.dataset.customCategory)el.dataset.customCategory='other';applyCustomDeviceAppearance(el);moveCustomDeviceLayer(el);}if(el.dataset.kind==='threeWay'){if(!el.dataset.valveSourceA)el.dataset.valveSourceA=el.dataset.sourceA||'水塔';if(!el.dataset.valveSourceB)el.dataset.valveSourceB=el.dataset.sourceB||'地下水';if(!el.dataset.valveSourceC)el.dataset.valveSourceC='自來水';if(!el.dataset.valveActivePort){const st=el.dataset.switchState||'';el.dataset.valveActivePort=st===el.dataset.valveSourceB?'B':st===el.dataset.valveSourceC?'C':'A';}if(!el.dataset.valveMode)el.dataset.valveMode='手動';}applyComponentVisual(el);}if(el.dataset.kind==='threeWay')updateThreeWayVisual(el);if(el.tagName==='polyline')el.dataset.length=routeLength(routePoints(el)).toFixed(1)});scaleFactor=d.scaleFactor||scaleFactor||null;zoom=d.zoom||1;pan=d.pan||{x:0,y:0};sanitizeObsoleteOverlayArtifacts();tf();updateAllRouteLengths();rebuildPowerRelations();refreshList();updateScaleUI();refreshStats();applyViewFilters();}
+function loadData(d){if(Array.isArray(d?.customLibrary))setCustomLibrary(d.customLibrary,false);document.querySelectorAll('[data-user="1"]').forEach(n=>n.remove());(d.elements||[]).forEach(o=>{const doc=new DOMParser().parseFromString(o.svg,'image/svg+xml');const el=document.importNode(doc.documentElement,true);el.dataset.user='1';if(el.classList.contains('component')&&!el.dataset.uid)el.dataset.uid='cmp-'+Date.now()+'-'+Math.floor(Math.random()*99999);(qs(o.parent)||qs('annoLayer')).appendChild(el);if(el.classList.contains('component')){if(!el.dataset.iconScale)el.dataset.iconScale='0.8';if(!el.dataset.shapeScaleX)el.dataset.shapeScaleX='1';if(!el.dataset.shapeScaleY)el.dataset.shapeScaleY='1';if(!el.dataset.shapeLock)el.dataset.shapeLock='yes';if(!el.dataset.labelScale)el.dataset.labelScale='0.9';if(!el.dataset.showLabel)el.dataset.showLabel='yes';if(!el.dataset.locked)el.dataset.locked='no';if(!el.dataset.photoCount)el.dataset.photoCount='0';if(!el.dataset.mainFunction)el.dataset.mainFunction=defaultMainFunctions[el.dataset.kind]||el.dataset.name||'';if(el.dataset.kind==='customDevice'){if(!el.dataset.customIcon)el.dataset.customIcon='⚙';if(!el.dataset.customCategory)el.dataset.customCategory='other';applyCustomDeviceAppearance(el);moveCustomDeviceLayer(el);}if(el.dataset.kind==='threeWay'){if(!el.dataset.valveSourceA)el.dataset.valveSourceA=el.dataset.sourceA||'水塔';if(!el.dataset.valveSourceB)el.dataset.valveSourceB=el.dataset.sourceB||'地下水';if(!el.dataset.valveSourceC)el.dataset.valveSourceC='自來水';if(!el.dataset.valveActivePort){const st=el.dataset.switchState||'';el.dataset.valveActivePort=st===el.dataset.valveSourceB?'B':st===el.dataset.valveSourceC?'C':'A';}if(!el.dataset.valveMode)el.dataset.valveMode='手動';}applyComponentVisual(el);}if(el.dataset.kind==='threeWay')updateThreeWayVisual(el);if(el.tagName==='polyline')el.dataset.length=routeLength(routePoints(el)).toFixed(1)});scaleFactor=d.scaleFactor||scaleFactor||null;zoom=d.zoom||1;pan=d.pan||{x:0,y:0};sanitizeObsoleteOverlayArtifacts();tf();updateAllRouteLengths();rebuildPowerRelations();syncValveFromWaterRoutes();refreshList();updateScaleUI();refreshStats();applyViewFilters();}
 
 const HISTORY_LIMIT=30;
 function historySnapshot(){try{return JSON.stringify(exportData())}catch(e){return''}}
@@ -1110,7 +1537,7 @@ function redoHistory(){
 }
 function resetHistoryFromCurrent(){historyReady=false;initHistory()}
 
-function autosave(){const changed=historyCommit();try{localStorage.setItem('pigfarmCadV69',JSON.stringify(exportData()))}catch(e){}if(changed)markCloudPending();scheduleCloudPush();updateCloudUi();}
+function autosave(){const changed=historyCommit();if(changed)window.dispatchEvent(new CustomEvent('cad:local-changed'));if(changed)saveVersion('定期自動備份');try{localStorage.setItem('pigfarmCadV69',JSON.stringify(exportData()))}catch(e){}if(changed)markCloudPending();scheduleCloudPush();updateCloudUi();}
 function autoload(){
  try{
    const fresh=localStorage.getItem('pigfarmCadV69')||localStorage.getItem('pigfarmCadV68')||localStorage.getItem('pigfarmCadV67')||localStorage.getItem('pigfarmCadV66')||localStorage.getItem('pigfarmCadV64')||localStorage.getItem('pigfarmCadV60')||localStorage.getItem('pigfarmCadV53');
@@ -1125,7 +1552,7 @@ function autoload(){
  }catch(e){}
 }
 function csvCell(v){v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
-function exportEngineeringCsv(){const rows=[['類別','名稱','所屬棟舍','X','Y','規格','管徑/線徑','功率kW','風量m3/h','靜壓Pa','緊急等級','發電備援','上游/來源','去向','實際長度m','備註']];document.querySelectorAll('.component[data-user="1"]').forEach(c=>{const p=componentXY(c);rows.push([componentCategory(c),c.dataset.name||'',c.dataset.building||'',p.x.toFixed(1),p.y.toFixed(1),c.dataset.spec||'',c.dataset.lineSize||'',c.dataset.powerKw||'',c.dataset.airflow||'',c.dataset.staticPa||'',c.dataset.emergencyClass||'',c.dataset.backup||'',c.dataset.powerParentName||c.dataset.sourceA||'',c.dataset.target||'','',c.dataset.note||''])});document.querySelectorAll('polyline[data-user="1"]').forEach(r=>rows.push([r.dataset.kind==='water'?'水線':'電線',r.dataset.name||'',r.dataset.building||'','','',r.dataset.spec||'',r.dataset.lineSize||'','','','','','',r.dataset.sourceA||'',r.dataset.target||'',r.dataset.realLength||'',r.dataset.note||'']));const csv='\ufeff'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n');dl('pigfarm_engineering_list_v26.csv',csv,'text/csv;charset=utf-8');status.textContent='已匯出工程清單 CSV';}
+function exportEngineeringCsv(){const rows=[['類別','名稱','所屬棟舍','X','Y','規格','管徑/線徑','功率kW','風量m3/h','靜壓Pa','緊急等級','發電備援','上游/來源','去向','實際長度m','備註']];document.querySelectorAll('.component[data-user="1"]').forEach(c=>{const p=componentXY(c);rows.push([componentCategory(c),c.dataset.name||'',c.dataset.building||'',p.x.toFixed(1),p.y.toFixed(1),c.dataset.spec||'',c.dataset.lineSize||'',c.dataset.powerKw||'',c.dataset.airflow||'',c.dataset.staticPa||'',c.dataset.emergencyClass||'',c.dataset.backup||'',c.dataset.powerParentName||c.dataset.sourceA||'',c.dataset.target||'','',c.dataset.note||''])});document.querySelectorAll('polyline[data-user="1"]').forEach(r=>rows.push([r.dataset.kind==='water'?'水線':r.dataset.kind==='feed'?'料線':'電線',r.dataset.name||'',r.dataset.building||'','','',r.dataset.spec||'',r.dataset.lineSize||'','','','','','',r.dataset.sourceA||'',r.dataset.target||'',r.dataset.realLength||'',r.dataset.note||'']));const csv='\ufeff'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n');dl('pigfarm_engineering_list_v26.csv',csv,'text/csv;charset=utf-8');status.textContent='已匯出工程清單 CSV';}
 qs('csvBtn').onclick=exportEngineeringCsv;
 qs('svgBtn').onclick=()=>dl('pigfarm_cad_export_v691.svg',new XMLSerializer().serializeToString(svg),'image/svg+xml');qs('pngBtn').onclick=()=>{const s=new XMLSerializer().serializeToString(svg),u=URL.createObjectURL(new Blob([s],{type:'image/svg+xml'})),im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=1600;c.height=1556;const ctx=c.getContext('2d');ctx.fillStyle='#1b2228';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='pigfarm_cad_export_v691.png';a.click()})};im.src=u};
 
@@ -1171,13 +1598,105 @@ function normalPower(){
 }
 
 function refreshStats(){let w=0,e=0,p=0,ab=0;document.querySelectorAll('#waterLayer polyline[data-user="1"]').forEach(r=>{const u=routeLength(routePoints(r));const m=metersFromUnits(u);if(m!=null)w+=m});document.querySelectorAll('#elecLayer polyline[data-user="1"]').forEach(r=>{const u=routeLength(routePoints(r));const m=metersFromUnits(u);if(m!=null)e+=m});emergencyLoads().forEach(c=>{const kw=parseFloat(c.dataset.powerKw||0)||0;p+=kw;if(c.dataset.backup==='yes'&&(c.dataset.emergencyClass==='A'||c.dataset.emergencyClass==='B'))ab+=kw});if(qs('waterLenStat'))qs('waterLenStat').textContent=scaleFactor?w.toFixed(1)+' m':'未校正';if(qs('elecLenStat'))qs('elecLenStat').textContent=scaleFactor?e.toFixed(1)+' m':'未校正';if(qs('powerStat'))qs('powerStat').textContent=p.toFixed(2)+' kW';if(qs('backupPowerStat'))qs('backupPowerStat').textContent=ab.toFixed(2)+' kW';refreshEmergencySimulator();}
-function refreshList(){const items=[...document.querySelectorAll('[data-user="1"]')];const list=qs('objList');if(!items.length){list.innerHTML='<div class="objrow">尚未新增設備</div>';refreshStats();renderPowerTree();renderDeviceFilters();return}list.innerHTML='';items.forEach((el,i)=>{const row=document.createElement('div');row.className='objrow';const kind=el.dataset.kind||el.tagName;row.innerHTML=`${objectLocked(el)?'🔒 ':''}${el.dataset.name||('物件 '+(i+1))}<span class="badge">${kind}</span>`;row.onclick=()=>{fill(el);showObjectDetail(el)};list.appendChild(row)});refreshStats();renderPowerTree();renderDeviceFilters()}
+// V6.9.49：已放置元件全文搜尋與定位（不搜尋尚未放置的設備庫）。
+let cadFindTimer=0,cadFindFocusTimer=0;
+function cadFindAll(){return [...document.querySelectorAll('[data-user="1"]')].filter(el=>el.classList.contains('component')||['polyline','line','text','rect','circle'].includes(el.tagName.toLowerCase()));}
+function cadFindName(el){return el.dataset.name||el.dataset.kind||el.tagName||'未命名元件';}
+function cadFindText(el){return [el.dataset.name,el.dataset.mainFunction,el.dataset.building,el.dataset.kind,el.dataset.note,el.dataset.spec,el.dataset.area,el.dataset.sourceA,el.dataset.target,el.dataset.uid].filter(Boolean).join(' ').toLocaleLowerCase();}
+function cadFindBounds(el){
+ try{
+   if(el.classList.contains('component')){
+     const center=componentXY(el),box=el.getBBox();
+     return {x:center.x,y:center.y,r:Math.max(24,Math.hypot(box.width,box.height)*.65)};
+   }
+   const b=el.getBBox();
+   // SVG getBBox is local; for polyline and static annotations there is no element rotation.
+   return {x:b.x+b.width/2,y:b.y+b.height/2,r:Math.max(22,Math.hypot(b.width,b.height)*.55)};
+ }catch(e){return null}
+}
+function cadFindLocate(el){
+ const bounds=cadFindBounds(el);if(!bounds)return;
+ // Clear only UI filters; do not delete or edit project data.
+ viewPreset='all';singleDeviceUid='';deviceTypeFilter=null;
+ if(qs('buildingFilter'))qs('buildingFilter').value='all';
+ if(qs('deviceSingleFilter'))qs('deviceSingleFilter').value='';
+ ['componentChk','ventChk','waterChk','elecChk','feedChk','annoChk'].forEach(id=>{if(qs(id))qs(id).checked=true});
+ ['componentLayer','ventLayer','waterLayer','elecLayer','feedLayer','annoLayer'].forEach(id=>{if(qs(id))qs(id).style.display=''});
+ applyViewFilters();renderDeviceFilters();
+ const vb=svg.viewBox.baseVal;
+ zoom=Math.max(zoom,Math.min(3.2,Math.max(1.6,80/Math.max(1,bounds.r))));
+ pan={x:vb.x+vb.width/2-zoom*bounds.x,y:vb.y+vb.height/2-zoom*bounds.y};tf();
+ // Selecting resets the UI field controls and updates selection handles.
+ fill(el);showObjectDetail(el);
+ qs('cadFindFocusRing')?.remove();
+ const ring=mk('circle',{id:'cadFindFocusRing',cx:bounds.x,cy:bounds.y,r:bounds.r+13,class:'cad-find-focus-ring','pointer-events':'none'});
+ vp.appendChild(ring);
+ clearTimeout(cadFindFocusTimer);cadFindFocusTimer=setTimeout(()=>ring.remove(),3500);
+ status.textContent='已定位並標示：'+cadFindName(el);
+}
+function cadFindRender(){
+ const inp=qs('cadFindInput'),meta=qs('cadFindMeta'),list=qs('cadFindResults');if(!inp||!list)return;
+ const q=inp.value.trim().toLocaleLowerCase();list.replaceChildren();
+ const drop=qs('cadFindDrop');if(drop){drop.hidden=!q;inp.setAttribute('aria-expanded',q?'true':'false')}
+ if(!q){meta.textContent='輸入關鍵字，快速找到已放置的元件';return}
+ const matches=cadFindAll().filter(el=>cadFindText(el).includes(q));
+ // 與配電箱編輯器共用同一份已儲存資料；上方搜尋不能只查 CAD 最上層物件。
+ const nested=[];
+ for(const panel of document.querySelectorAll('.component[data-user="1"]')){
+  if(!isPanel(panel))continue;
+  const marks=safeJson(panel.dataset.panelPhotoMarks,[]);
+  if(Array.isArray(marks))for(const mark of marks){
+   const terms=[mark.circuitId,mark.breaker,mark.functionName,mark.purpose,mark.loadName,mark.sourceFrom,mark.targetTo,mark.detail,mark.note];
+   if(terms.filter(Boolean).join(' ').toLocaleLowerCase().includes(q)){
+    nested.push({panel,markUid:mark.uid,name:photoMarkCode(mark),detail:'📷 '+(panel.dataset.name||'配電箱')+'｜'+(mark.functionName||'照片標記')});
+   }
+  }
+  const circuits=safeJson(panel.dataset.panelCircuits,[]);
+  if(Array.isArray(circuits))for(const circuit of circuits){
+   const terms=[circuit.id,circuit.loadName,circuit.groupArea,circuit.controlMode,circuit.note];
+   if(terms.filter(Boolean).join(' ').toLocaleLowerCase().includes(q)){
+    nested.push({panel,circuitId:String(circuit.id||''),name:String(circuit.id||'未編號迴路'),detail:'⚡ '+(panel.dataset.name||'配電箱')+'｜'+(circuit.loadName||'迴路')});
+   }
+  }
+ }
+ const total=matches.length+nested.length;
+ meta.textContent=total?`找到 ${total} 個結果${total>80?'（僅顯示前 80 個）':''}`:'找不到符合的元件。請確認配電箱標記已儲存，或改用設備名稱搜尋。';
+
+ matches.slice(0,80).forEach(el=>{
+  const row=document.createElement('button');row.type='button';row.className='cad-find-result';row.setAttribute('role','option');
+  const name=document.createElement('strong');name.textContent=cadFindName(el);
+  const desc=document.createElement('small');desc.textContent=[el.dataset.building,el.dataset.mainFunction||el.dataset.kind||el.tagName].filter(Boolean).join(' · ');
+  row.append(name,desc);row.onclick=()=>{cadFindLocate(el);const drop=qs('cadFindDrop');if(drop)drop.hidden=true;inp.setAttribute('aria-expanded','false')};list.appendChild(row);
+ });
+ nested.slice(0,Math.max(0,80-matches.length)).forEach(result=>{
+  const row=document.createElement('button');row.type='button';row.className='cad-find-result';row.setAttribute('role','option');
+  const name=document.createElement('strong');name.textContent=result.name;
+  const desc=document.createElement('small');desc.textContent=result.detail;
+  row.append(name,desc);
+  row.onclick=()=>{const drop=qs('cadFindDrop');if(drop)drop.hidden=true;inp.setAttribute('aria-expanded','false');openSearchMatch(result)};
+  list.appendChild(row);
+ });
+}
+qs('cadFindResults')?.addEventListener('click',e=>{
+ if(e.target.closest('button')){const d=qs('cadFindDrop');if(d)d.hidden=true;qs('cadFindInput')?.setAttribute('aria-expanded','false')}
+});
+qs('cadFindDismiss')?.addEventListener('click',()=>{
+ const d=qs('cadFindDrop');if(d)d.hidden=true;qs('cadFindInput')?.setAttribute('aria-expanded','false');
+});
+document.addEventListener('pointerdown',e=>{
+ if(!e.target.closest('#topCadSearch')){const d=qs('cadFindDrop');if(d)d.hidden=true;qs('cadFindInput')?.setAttribute('aria-expanded','false')}
+});
+qs('cadFindInput')?.addEventListener('focus',e=>{if(e.target.value.trim())cadFindRender()});
+qs('cadFindInput')?.addEventListener('input',()=>{clearTimeout(cadFindTimer);cadFindTimer=setTimeout(cadFindRender,100)});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();qs('cadFindInput')?.focus();qs('cadFindInput')?.select()}});
+qs('cadFindInput')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();qs('cadFindResults')?.querySelector('button')?.click()}if(e.key==='Escape'){e.currentTarget.value='';cadFindRender();e.currentTarget.blur()}});
+function refreshList(){if(qs('cadFindInput')?.value.trim())cadFindRender();const items=[...document.querySelectorAll('[data-user="1"]')];const list=qs('objList');if(!items.length){list.innerHTML='<div class="objrow">尚未新增設備</div>';refreshStats();renderPowerTree();renderDeviceFilters();return}list.innerHTML='';items.forEach((el,i)=>{const row=document.createElement('div');row.className='objrow';const kind=el.dataset.kind||el.tagName;row.innerHTML=`${objectLocked(el)?'🔒 ':''}${el.dataset.name||('物件 '+(i+1))}<span class="badge">${kind}</span>`;row.onclick=()=>{fill(el);showObjectDetail(el)};list.appendChild(row)});refreshStats();renderPowerTree();renderDeviceFilters()}
 
 
 
 qs('objectDetailClose').onclick=hideObjectDetail;
 qs('deleteConfirmCancel').onclick=closeDeleteConfirm;
-qs('deleteConfirmOk').onclick=()=>{if(deletePendingObject)deleteObjectNow(deletePendingObject)};
+qs('deleteConfirmOk').onclick=()=>{if(deletePendingObject){backupSnapshot();saveVersion('刪除前備份',true);deleteObjectNow(deletePendingObject)}};
 qs('deleteConfirmModal').addEventListener('mousedown',e=>{if(e.target===qs('deleteConfirmModal'))closeDeleteConfirm()});
 
 
@@ -1194,7 +1713,8 @@ qs('selectionDeleteBtn').onclick=e=>{e.preventDefault();e.stopPropagation();if(s
 
 qs('deviceMoreBtn').onclick=()=>{
  document.body.classList.toggle('device-more-open');
- qs('deviceMoreBtn').textContent=document.body.classList.contains('device-more-open')?'收合設定':'更多設定';
+ qs('deviceMoreBtn').textContent=document.body.classList.contains('device-more-open')?'收合設定 ▴':'更多設定 ▾';
+ qs('deviceMoreBtn').setAttribute('aria-expanded',String(document.body.classList.contains('device-more-open')));
  if(selected)updateSimplePropertyVisibility(selected);
 };
 document.querySelectorAll('.right .secondary-info').forEach(sec=>{
@@ -1320,7 +1840,7 @@ function setPhotoTool(mode){
 function photoMarkById(id){return (panelDraft.photoMarks||[]).find(m=>m.uid===id)||null}
 function newPhotoMarkAt(x,y,w=6,h=5){
  const n=(panelDraft.photoMarks||[]).length+1;
- const m={uid:'pm-'+Date.now()+'-'+Math.floor(Math.random()*9999),x:+Math.max(0,Math.min(100-w,x-w/2)).toFixed(2),y:+Math.max(0,Math.min(100-h,y-h/2)).toFixed(2),w:+w.toFixed(2),h:+h.toFixed(2),circuitId:`QF${n}`,functionName:'',purpose:'',loadName:'',ratedKw:'',measuredA:'',measuredKw:'',kwh:'',breaker:`QF${n}`,emergency:'',backup:'',note:'',sourceFrom:'',targetTo:'',detail:'',iconType:'breaker',showPower:'yes'};
+ const m={uid:'pm-'+Date.now()+'-'+Math.floor(Math.random()*9999),x:+Math.max(0,Math.min(100-w,x-w/2)).toFixed(2),y:+Math.max(0,Math.min(100-h,y-h/2)).toFixed(2),w:+w.toFixed(2),h:+h.toFixed(2),circuitId:`QF${n}`,functionName:'',purpose:'',loadName:'',ratedKw:'',measuredA:'',measuredKw:'',kwh:'',breaker:'',emergency:'',backup:'',note:'',sourceFrom:'',targetTo:'',detail:'',iconType:'breaker',showPower:'yes'};
  panelDraft.photoMarks.push(m);photoSelectedMarkId=m.uid;persistPanelPhotoDraft();updatePanelTabBadges();loadPhotoMarkEditor(m);return m;
 }
 function photoSummaryHtml(mark){
@@ -1336,7 +1856,7 @@ function photoSummaryHtml(mark){
 
 
 function photoMainRole(mark){return String(mark?.functionName||mark?.purpose||mark?.loadName||'未設定主要作用').trim()}
-function photoMarkCode(mark){return String(mark?.breaker||mark?.circuitId||'未編號').trim()}
+function photoMarkCode(mark){return String(mark?.circuitId||mark?.breaker||'未編號').trim()}
 function photoUseText(mark){
  const a=[];if(mark?.measuredKw)a.push(mark.measuredKw+' kW');else if(mark?.ratedKw)a.push(mark.ratedKw+' kW');
  if(mark?.measuredA)a.push(mark.measuredA+' A');if(mark?.kwh)a.push(mark.kwh+' kWh/月');return a.join(' / ')||'—';
@@ -1350,7 +1870,7 @@ function photoPopupHtml(mark){
  add('去向',mark.targetTo||mark.loadName);
  add('用電',photoUseText(mark));
  if(mark.emergency||mark.backup)add('備援',[mark.emergency,backup].filter(Boolean).join(' / '));
- return `<div class="pip-head"><div class="pip-icon">${esc(photoIconMap[mark.iconType||'breaker']||'●')}</div><div class="pip-title"><strong>${esc(photoMainRole(mark))}</strong><span>${esc(photoMarkCode(mark))}<span class="photo-save-state">自動儲存</span></span></div><button type="button" class="pip-close" title="關閉">×</button></div>
+ return `<div class="pip-head"><div class="pip-icon">${esc((mark.iconType||'breaker')==='breaker'?photoMarkCode(mark):(photoIconMap[mark.iconType]||'●'))}</div><div class="pip-title"><strong>${esc(photoMainRole(mark))}</strong><span>${esc(photoMarkCode(mark))}<span class="photo-save-state">自動儲存</span></span></div><button type="button" class="pip-close" title="關閉">×</button></div>
  <div class="photo-inline-grid">${rows.slice(0,5).join('')||'<b>重點</b><span>尚未填寫</span>'}</div>`;
 }
 function writePhotoFormToMark(mark){
@@ -1363,7 +1883,7 @@ function writePhotoFormToMark(mark){
 }
 function commitSelectedPhotoMark(silent=true){
  const mark=photoMarkById(photoSelectedMarkId);if(!mark)return false;
- writePhotoFormToMark(mark);persistPanelPhotoDraft();renderPanelPhoto();
+ writePhotoFormToMark(mark);persistPanelPhotoDraft();renderPanelPhoto();if(qs('cadFindInput')?.value.trim())cadFindRender();
  if(!silent){qs('photoMarkSummary').innerHTML=photoSummaryHtml(mark);status.textContent='已儲存照片標註：'+photoMainRole(mark)}
  return true;
 }
@@ -1376,7 +1896,7 @@ function savePanelEditor(closeAfter=false){
  panelEditTarget.dataset.panelCircuitCount=String(panelDraft.circuits.length);
  panelEditTarget.dataset.panelLoadKw=panelDraft.circuits.reduce((a,c)=>a+(parseFloat(c.kw)||0),0).toFixed(2);
  const lab=panelEditTarget.querySelector('.component-label');if(lab)lab.textContent=panelEditTarget.dataset.name;
- autosave();refreshList();status.textContent='已儲存配電箱配置：'+panelEditTarget.dataset.name;
+ autosave();refreshList();if(qs('cadFindInput')?.value.trim())cadFindRender();status.textContent='已儲存配電箱配置：'+panelEditTarget.dataset.name;
  qs('panelFootSummary').textContent='已儲存｜'+panelEditTarget.dataset.name+'｜'+panelDraft.circuits.length+' 分路｜照片標註 '+(panelDraft.photoMarks||[]).length+' 筆';
  if(closeAfter)closePanelEditor(false);
 }
@@ -1410,7 +1930,8 @@ function renderPanelPhoto(){updatePanelTabBadges();
  const img=qs('panelPhotoImg'),ph=qs('panelPhotoPlaceholder'),ov=qs('panelPhotoOverlay');
  const has=!!panelDraft.photoData;
  img.style.display=has?'block':'none';ph.style.display=has?'none':'block';
- if(!has){img.removeAttribute('src');ov.innerHTML='';return}
+ if(!has){img.removeAttribute('src');ov.innerHTML='';qs('panelPhotoFit').style.display='none';return}
+ qs('panelPhotoFit').style.display='inline-block';
  if(img.src!==panelDraft.photoData)img.src=panelDraft.photoData;
  qs('panelCircuitIdList').innerHTML=(panelDraft.circuits||[]).map(c=>`<option value="${esc(c.id||'')}">${esc(c.loadName||'')}</option>`).join('');
  ov.innerHTML='';
@@ -1418,9 +1939,9 @@ function renderPanelPhoto(){updatePanelTabBadges();
    if((+mark.x)<=1&&(+mark.y)<=1&&(+mark.w)<=1&&(+mark.h)<=1){mark.x*=100;mark.y*=100;mark.w*=100;mark.h*=100}
    const d=document.createElement('div');d.className='photo-mark'+(mark.uid===photoSelectedMarkId?' selected':'');
    d.style.left=mark.x+'%';d.style.top=mark.y+'%';d.style.width=mark.w+'%';d.style.height=mark.h+'%';d.dataset.markUid=mark.uid;
-   const icon=document.createElement('div');icon.className='photo-mark-icon';icon.textContent=photoIconMap[mark.iconType||'breaker']||'●';
+   const icon=document.createElement('div');icon.className='photo-mark-icon';icon.textContent=(mark.iconType||'breaker')==='breaker'?photoMarkCode(mark):(photoIconMap[mark.iconType]||'●');
    const oldLabel=document.createElement('div');oldLabel.className='photo-mark-label';oldLabel.textContent=photoMainRole(mark);d.appendChild(oldLabel);
-   const main=document.createElement('div');main.className='photo-mark-main'+((+mark.x)>72?' flip':'');
+   const main=document.createElement('div');main.className='photo-mark-main'+((+mark.x)>72?' flip':'')+((+mark.y)+(+mark.h)>86?' above':'');
    main.innerHTML=`<span class="pm-code">${esc(photoMarkCode(mark))}</span><span class="pm-role">${esc(photoMainRole(mark))}</span>`;d.appendChild(icon);d.appendChild(main);
    if((mark.showPower||'yes')==='yes'&&(mark.measuredKw||mark.ratedKw||mark.measuredA)){const pp=document.createElement('div');pp.className='photo-mark-power';pp.textContent=(mark.measuredKw||mark.ratedKw?`${mark.measuredKw||mark.ratedKw}kW`:'')+(mark.measuredA?` / ${mark.measuredA}A`:'');d.appendChild(pp)}
    if(photoToolMode==='move'&&mark.uid===photoSelectedMarkId){const h=document.createElement('div');h.className='photo-resize-handle';h.title='拖曳調整大小';d.appendChild(h)}
@@ -1438,20 +1959,15 @@ function renderPanelPhoto(){updatePanelTabBadges();
  const selectedMark=photoMarkById(photoSelectedMarkId);
  if(selectedMark){
    qs('photoMarkSummary').innerHTML=photoSummaryHtml(selectedMark);
-   const popup=document.createElement('div');popup.className='photo-inline-popup';popup.dataset.popupFor=selectedMark.uid;popup.innerHTML=photoPopupHtml(selectedMark);
-   const x=+selectedMark.x,y=+selectedMark.y,w=+selectedMark.w;
-   popup.style.top=Math.max(1,Math.min(78,y))+'%';
-   if(x>62){popup.style.right=Math.max(1,100-x+1)+'%'}else{popup.style.left=Math.min(76,x+w+1)+'%'}
-   popup.addEventListener('pointerdown',e=>e.stopPropagation());popup.addEventListener('click',e=>e.stopPropagation());
-   popup.querySelector('.pip-close').onclick=e=>{e.stopPropagation();photoSelectedMarkId=null;clearPhotoMarkEditor(false);renderPanelPhoto()};
-   ov.appendChild(popup);
+   // 標註資料不再覆蓋照片；編輯欄位固定顯示於旁邊。
+
  }
 }
 function photoPointerPos(e){const r=qs('panelPhotoOverlay').getBoundingClientRect();return{x:Math.max(0,Math.min(100,(e.clientX-r.left)/r.width*100)),y:Math.max(0,Math.min(100,(e.clientY-r.top)/r.height*100))}}
 function enablePhotoMarkMode(){if(!panelDraft.photoData)return alert('請先上傳配電箱實體照片');setPhotoTool('box')}
 function finishPhotoMarkBox(a,b){
  const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(a.x-b.x),h=Math.abs(a.y-b.y);if(w<1||h<1)return;
- const m=newPhotoMarkAt(x+w/2,y+h/2,w,h);setPhotoTool('browse');persistPanelPhotoDraft();return m;
+ const m=newPhotoMarkAt(x+w/2,y+h/2,w,h);setPhotoTool('browse');persistPanelPhotoDraft();qs('photoMarkFunction')?.focus({preventScroll:true});return m;
 }
 function compressPanelPhoto(file){
  return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onerror=reject;fr.onload=()=>{const im=new Image();im.onerror=reject;im.onload=()=>{const maxW=1280,maxH=1200,scale=Math.min(1,maxW/im.width,maxH/im.height);const c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*scale));c.height=Math.max(1,Math.round(im.height*scale));const ctx=c.getContext('2d');ctx.drawImage(im,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',0.78));};im.src=fr.result;};fr.readAsDataURL(file);});
@@ -1635,7 +2151,8 @@ qs('photoMoreFieldsBtn').onclick=()=>{
  qs('photoMoreFieldsBtn').textContent=sec?.classList.contains('photo-more-open')?'收合欄位':'更多欄位';
 };
 qs('photoSaveMarkBtn').onclick=savePhotoMarkFields;
-['photoMarkFunction','photoMarkPurpose','photoMarkLoad','photoMarkBreaker','photoMarkFrom','photoMarkTo','photoMarkDetail','photoMarkRatedKw','photoMarkMeasuredKw','photoMarkMeasuredA','photoMarkKwh','photoMarkNote'].forEach(id=>qs(id)?.addEventListener('input',()=>{
+qs('panelEditorModal').querySelector('.photo-workspace-editor')?.addEventListener('pointerdown',e=>e.stopPropagation());
+['photoMarkId','photoMarkFunction','photoMarkPurpose','photoMarkLoad','photoMarkBreaker','photoMarkFrom','photoMarkTo','photoMarkDetail','photoMarkRatedKw','photoMarkMeasuredKw','photoMarkMeasuredA','photoMarkKwh','photoMarkNote'].forEach(id=>qs(id)?.addEventListener('input',()=>{
  const m=photoMarkById(photoSelectedMarkId);if(!m)return;writePhotoFormToMark(m);persistPanelPhotoDraft();renderPanelPhoto();
 }));
 ['photoMarkEmergency','photoMarkBackup','photoMarkIconType','photoMarkShowPower'].forEach(id=>qs(id)?.addEventListener('change',()=>{
