@@ -1,4 +1,4 @@
-const CACHE='huwei-cad-v6971-dual-role-20261014';
+const CACHE='huwei-cad-v6974-toolbar-account-20261014';
 const ASSETS=[
   './',
   './index.html',

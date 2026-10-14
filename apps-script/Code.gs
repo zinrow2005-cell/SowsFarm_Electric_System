@@ -26,14 +26,33 @@ function initializeAdmin(){
 }
 function hash_(s){return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,s,Utilities.Charset.UTF_8).map(x=>('0'+(x&255).toString(16)).slice(-2)).join('')}
 function constantEqual_(a,b){a=String(a||'');b=String(b||'');if(a.length!==b.length)return false;let v=0;for(let i=0;i<a.length;i++)v|=a.charCodeAt(i)^b.charCodeAt(i);return v===0}
+// 短期登入6小時；勾選記住登入時，工作階段有效30天，可透過登出撤銷。
+const ADMIN_REMEMBER_SECONDS=30*24*60*60;
+function sessionKey_(session){return 'ADMIN_SESSION_'+hash_(String(session||''))}
 function adminLogin_(b){
  const user=PROPS.getProperty('ADMIN_USER'),salt=PROPS.getProperty('ADMIN_SALT'),expected=PROPS.getProperty('ADMIN_HASH');
  if(!user||!expected)throw Error('管理者尚未初始化');
  if(String(b.username||'')!==user||!constantEqual_(hash_(salt+String(b.password||'')),expected))throw Error('帳號或密碼錯誤');
+ const remember=b.remember===true;
+ const expiresIn=remember?ADMIN_REMEMBER_SECONDS:21600;
  const session=Utilities.getUuid().replace(/-/g,'')+Utilities.getUuid().replace(/-/g,'');
- CacheService.getScriptCache().put('session_'+hash_(session),user,21600);return{ok:true,session,expiresIn:21600};
+ const key=sessionKey_(session),expiresAt=Date.now()+expiresIn*1000;
+ if(remember){PROPS.setProperty(key,JSON.stringify({user,expiresAt}));}
+ else CacheService.getScriptCache().put('session_'+hash_(session),user,expiresIn);
+ return{ok:true,session,expiresIn};
 }
-function admin_(b){const value=CacheService.getScriptCache().get('session_'+hash_(String(b.session||'')));if(!value||value!==PROPS.getProperty('ADMIN_USER'))throw Error('管理者登入已過期，請重新登入')}
+function admin_(b){
+ const token=String(b.session||'');if(!token||token.length<32)throw Error('管理者登入已過期，請重新登入');
+ const current=PROPS.getProperty('ADMIN_USER');
+ const cached=CacheService.getScriptCache().get('session_'+hash_(token));
+ if(cached===current)return true;
+ const key=sessionKey_(token),raw=PROPS.getProperty(key);
+ if(raw){try{const session=JSON.parse(raw);if(session.user===current&&Number(session.expiresAt)>Date.now())return true;}catch(e){}
+  PROPS.deleteProperty(key);
+ }
+ throw Error('管理者登入已過期，請重新登入');
+}
+function logout_(b){const token=String(b.session||'');if(token){CacheService.getScriptCache().remove('session_'+hash_(token));PROPS.deleteProperty(sessionKey_(token));}return{ok:true}}
 function out_(o){return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON)}
 function doGet(){return out_({ok:true,service:'虎尾場CAD V6.9.60',mode:'public-readonly',serverTime:new Date().toISOString()})}
 function doPost(e){
@@ -41,13 +60,14 @@ function doPost(e){
   const b=JSON.parse((e&&e.postData&&e.postData.contents)||'{}');const action=String(b.action||'');
   if(action==='publicProject'||action==='publicVersion')return out_(publicRead_(action));
   if(action==='adminLogin')return out_(adminLogin_(b));
+  if(action==='adminCheck'){admin_(b);return out_({ok:true});}
   admin_(b);ensure_();
   if(action==='ping')return out_(ping_(b));
   if(action==='saveProject')return out_(saveProject_(b));
   if(action==='getProject')return out_(getProject_(b));
   if(action==='uploadPhoto')return out_(uploadPhoto_(b));
   if(action==='listPhotos')return out_(listPhotos_(b));
-  if(action==='logout'){CacheService.getScriptCache().remove('session_'+hash_(String(b.session||'')));return out_({ok:true})}
+  if(action==='logout')return out_(logout_(b));
   throw Error('未知操作');
  }catch(err){return out_({ok:false,error:String(err.message||err)})}
 }

@@ -71,3 +71,6 @@
   setLeftTab('common');setRightTab('basic');
   setSimpleMode(true);setSimpleMode(saved!=='0');
 })();
+
+// V6.9.74 初始化上方工具列的選取狀態。
+(()=>{document.querySelectorAll('[data-cad-quick-tool]').forEach(b=>{const on=b.dataset.cadQuickTool==='select';b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on))})})();

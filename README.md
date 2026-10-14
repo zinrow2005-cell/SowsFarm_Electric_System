@@ -1,4 +1,4 @@
-# 虎尾母豬場 CAD V6.9.71
+# 虎尾母豬場 CAD V6.9.72
 
 完整 GitHub 網頁與 Apps Script `Code.gs` 雙模式草案。管理者登入並寫入；員工免登入讀取最新發布的專案。請先參閱 `apps-script/部署操作說明.md`，**必須先部署更新的 Apps Script，不能直接上線使用舊共用 Token 版本**。
 

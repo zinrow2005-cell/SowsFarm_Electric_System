@@ -9,14 +9,14 @@
 <meta name="apple-mobile-web-app-title" content="虎尾場CAD" />
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="apple-touch-icon" href="./assets/icons/icon-192.png" />
-<title>虎尾場 2D CAD 配置系統 V6.9.71 設定介面重設版</title>
+<title>虎尾場 2D CAD 配置系統 V6.9.72 設定介面重設版</title>
 <link rel="stylesheet" href="./assets/css/app.css" />
 </head>
 <body class="employee-mode role-unselected">
 <div id="roleGate" class="role-gate" role="dialog" aria-modal="true" aria-label="選擇身分">
  <section class="role-card"><h2>虎尾母豬場 CAD</h2><p>選擇使用模式</p>
  <div class="role-choices"><button id="chooseEmployee" type="button">👀 員工端｜查看最新配置</button><button id="chooseAdmin" type="button">🛠 管理者端｜登入編輯</button></div>
- <form id="adminLoginForm" hidden autocomplete="on"><label>帳號<input id="adminUsername" autocomplete="username" value="dad" required></label><label>密碼<input id="adminPassword" type="password" autocomplete="current-password" required></label><button type="submit">管理者登入</button><button type="button" id="backToRole">返回</button></form>
+ <form id="adminLoginForm" hidden autocomplete="on"><label>帳號<input id="adminUsername" autocomplete="username" required></label><label>密碼<input id="adminPassword" type="password" autocomplete="current-password" required></label><label class="remember-login-row"><input id="rememberLogin" type="checkbox">保持登入 30 天（僅限私人裝置）</label><button type="submit">管理者登入</button><button type="button" id="backToRole">返回</button></form>
  <p id="roleMessage" class="role-message" aria-live="polite"></p></section>
 </div>
 <div id="employeeBar" class="employee-bar" hidden><strong>唯讀查看</strong><span id="employeeVersion">讀取最新資料…</span><button id="employeeQuickView" type="button" aria-controls="employeeFilters" aria-expanded="false">☷ 快速檢視</button>
@@ -24,7 +24,8 @@
 
 <button id="employeeQuickViewTop" type="button" aria-controls="employeeFilters" aria-expanded="false" hidden>☷ 快速檢視／設備標示</button>
 <header>
-  <h1>虎尾場 2D CAD 配置系統 V6.9.71</h1>
+  <h1>虎尾場 2D CAD 配置系統 V6.9.72</h1>
+  <div id="roleToolbar" class="role-toolbar" aria-live="polite"><span id="currentRoleBadge">尚未選擇身分</span><button id="roleSwitchBtn" type="button">切換使用者</button></div>
   <div class="actions">
     <button id="uiModeBtn" class="ui-mode-btn" type="button">⚙ 進階設定</button>
     <button id="cloudBtn" class="cloud-header-btn" type="button"><span id="cloudDot" class="cloud-dot"></span><span id="cloudStatusText">雲端</span></button>
@@ -229,10 +230,10 @@
 <main class="canvas-wrap" id="canvasWrap">
   <div class="canvas-toolbar">
     <div class="canvas-quick-tools">
-      <button id="quickSelectBtn" type="button">↖ 選取</button>
-      <button id="quickPanBtn" type="button">✋ 平移</button>
-      <button id="quickWaterBtn" type="button">💧 水線</button>
-      <button id="quickElectricBtn" type="button">⚡ 電線</button>
+      <button id="quickSelectBtn" data-cad-quick-tool="select" type="button" aria-pressed="true">↖ 選取</button>
+      <button id="quickPanBtn" data-cad-quick-tool="pan" type="button" aria-pressed="false">✋ 平移</button>
+      <button id="quickWaterBtn" data-cad-quick-tool="water" type="button" aria-pressed="false">💧 水線</button>
+      <button id="quickElectricBtn" data-cad-quick-tool="electric" type="button" aria-pressed="false">⚡ 電線</button>
       <button id="quickDeviceMenuBtn" type="button">＋ 設備</button>
       <button id="undoBtn" class="history-btn" type="button" title="復原" disabled>↶</button>
       <button id="redoBtn" class="history-btn" type="button" title="重做" disabled>↷</button>
@@ -343,7 +344,7 @@
     <div class="object-detail-tip">此視窗資料來自目前圖面設備設定；來源、去向與實際接線仍應以現場確認為準。</div>
   </div>
   <div id="routeAngleBadge" class="route-angle-badge">角度 —</div>
-  <div class="status" id="status">工具：選取｜V6.9.71：重新設計設定面板；底圖與棟舍配置維持目前版本。</div>
+  <div class="status" id="status">工具：選取｜V6.9.72：重新設計設定面板；底圖與棟舍配置維持目前版本。</div>
 </main>
 
 <div id="customDeviceModal" class="custom-device-backdrop" aria-hidden="true">
@@ -400,7 +401,7 @@
     <div class="device-group-head device-advanced-head">外觀與尺寸 <span>進階</span></div>
     <div class="prop-row device-advanced-row"><label>圖示倍率</label><input id="iconScale" type="number" step="0.1" min="0.2" max="5" value="0.8"></div>
     <div class="prop-row device-advanced-row"><label>寬度比例</label><input id="shapeScaleX" type="number" step="0.05" min="0.3" max="3" value="1"></div>
-    <div class="prop-row device-advanced-row"><label>高度比例</label><input id="shapeScaleY" type="number" step="0.05" min="0.3" max="3" value="1"></div>
+    <div class="prop-row device-advanced-row"><label>高度比例</label><input id="shapeScaleY" type="number" step="0.05" min="0.3" max="20" value="1"></div>
     <div class="prop-row device-advanced-row"><label>比例鎖定</label><select id="shapeLock"><option value="yes">鎖定 1:1</option><option value="no">自由比例</option></select></div>
     <div class="prop-actions shape-presets device-advanced-row">
       <button id="shapeNormalBtn" type="button">正常 1:1</button>

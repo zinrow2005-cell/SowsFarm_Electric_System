@@ -1,6 +1,13 @@
 (()=>{'use strict';
  const $=id=>document.getElementById(id),gate=$('roleGate'),msg=$('roleMessage'),bar=$('employeeBar');
  let mode='none',timer=null,rev=-1,refreshing=false,pendingRevision=null,returnFocus=null;
+ const LOGIN_KEY='huweiCADAdminSessionV6973',USER_KEY='huweiCADAdminUsername';
+ function forgetSession(){localStorage.removeItem(LOGIN_KEY);sessionStorage.removeItem(LOGIN_KEY)}
+ function rememberedSession(){try{return JSON.parse(localStorage.getItem(LOGIN_KEY)||sessionStorage.getItem(LOGIN_KEY)||'null')}catch(e){return null}}
+ const roleToolbar=$('roleToolbar'),roleSwitchBtn=$('roleSwitchBtn'),roleBadge=$('currentRoleBadge');
+ function reflectMode(){if(roleBadge)roleBadge.textContent=mode==='admin'?'管理者｜可編輯':mode==='employee'?'員工｜唯讀':'尚未選擇身分';if(roleToolbar)roleToolbar.hidden=mode==='none';}
+ async function chooseRole(){const prior=window.CAD_ADMIN_SESSION;if(prior){try{await api('logout',{session:prior})}catch(e){}}forgetSession();clearInterval(timer);timer=null;mode='none';rev=-1;pendingRevision=null;try{window.CAD_ADMIN_SESSION=''}catch(e){};setFilterOpen(false);document.body.classList.remove('admin-mode','employee-filters-open');document.body.classList.add('employee-mode','role-unselected');bar.hidden=true;topFilterToggle.hidden=true;gate.hidden=false;$('adminLoginForm').hidden=true;$('adminPassword').value='';msg.textContent='';closePreview();closeDetail();reflectMode()}
+ roleSwitchBtn?.addEventListener('click',chooseRole);
  const config=()=>{try{const c=JSON.parse(localStorage.getItem('huweiCADCloudConfig')||'{}');return c.endpoint||document.querySelector('#cloudEndpoint')?.value||''}catch(e){return document.querySelector('#cloudEndpoint')?.value||''}};
  // app-core's default deployment URL is already written to the cloud endpoint form.
  function endpoint(){return document.querySelector('#cloudEndpoint')?.value?.trim()||config()}
@@ -25,19 +32,35 @@
  $('employeeFilterClose')?.addEventListener('click',()=>setFilterOpen(false));
  const filterControlIds=new Set(['viewAllBtn','viewWaterBtn','viewElectricBtn','viewVentBtn','viewWasteBtn','viewFeedBtn','viewPumpBtn','viewValveBtn','viewSensorBtn','buildingFilter','deviceFilterAllBtn','deviceFilterNoneBtn','deviceSingleFilter','customViewPick','customViewApply']);
  function safeFilterControl(t){if(!filterHost.contains(t))return false;const el=t.closest('button,select,input');if(!el)return false;return filterControlIds.has(el.id)||!!el.closest('#deviceTypeFilters')&&el.matches('button')}
- function safeMode(){document.body.classList.add('employee-mode');document.body.classList.remove('admin-mode','role-unselected');bar.hidden=false;topFilterToggle.hidden=false;gate.hidden=true;mountEmployeeFilters();setFilterOpen(false);try{window.CAD_ADMIN_SESSION='';}catch(e){} }
- function adminMode(){document.body.classList.remove('employee-mode','role-unselected');document.body.classList.add('admin-mode');bar.hidden=true;topFilterToggle.hidden=true;gate.hidden=true;setFilterOpen(false);restoreAdminFilters();}
+ function safeMode(){document.body.classList.add('employee-mode');document.body.classList.remove('admin-mode','role-unselected');bar.hidden=false;topFilterToggle.hidden=false;gate.hidden=true;mountEmployeeFilters();setFilterOpen(false);try{window.CAD_ADMIN_SESSION='';}catch(e){} reflectMode();}
+ function adminMode(){document.body.classList.remove('employee-mode','role-unselected');document.body.classList.add('admin-mode');bar.hidden=true;topFilterToggle.hidden=true;gate.hidden=true;setFilterOpen(false);restoreAdminFilters();reflectMode();document.querySelectorAll('.tool').forEach(b=>{b.disabled=false;b.removeAttribute('aria-disabled');b.style.pointerEvents=''});}
  function loadPublished(data){if(typeof loadData!=='function')throw Error('網站尚未載入 CAD 核心');loadData(data);try{setTool('pan')}catch(e){} }
  async function refresh(force=false){if(refreshing||mode!=='employee')return;refreshing=true;try{const v=await api('publicVersion');if(force||Number(v.revision)!==rev){
    if(!force&&(!detail.hidden||!tip.hidden)){pendingRevision=Number(v.revision);$('employeeVersion').textContent='已有新版本，關閉設備資料後可按「更新」載入';return}
    const x=await api('publicProject');if(x.project)loadPublished(x.project);rev=Number(x.revision||0);pendingRevision=null;$('employeeVersion').textContent=x.project?'已更新至版本 '+rev:'管理者尚未發布配置';
  } }catch(e){$('employeeVersion').textContent='讀取失敗：'+e.message}finally{refreshing=false}}
  async function employee(){mode='employee';safeMode();await refresh(true);clearInterval(timer);timer=setInterval(()=>refresh(false),60000)}
+ reflectMode();
  $('chooseEmployee').onclick=employee;
  $('chooseAdmin').onclick=()=>{$('adminLoginForm').hidden=false;msg.textContent='請使用管理者帳號登入';$('adminPassword').focus()};
  $('backToRole').onclick=()=>{$('adminLoginForm').hidden=true;msg.textContent=''};
- $('adminLoginForm').onsubmit=async e=>{e.preventDefault();msg.textContent='正在驗證管理者…';try{const result=await api('adminLogin',{username:$('adminUsername').value.trim(),password:$('adminPassword').value});window.CAD_ADMIN_SESSION=result.session;mode='admin';clearInterval(timer);adminMode();$('adminPassword').value='';msg.textContent='';}catch(err){msg.textContent=err.message}};
- $('switchAdmin').onclick=()=>{gate.hidden=false;$('adminLoginForm').hidden=false;$('adminPassword').value='';};
+ $('adminLoginForm').onsubmit=async e=>{e.preventDefault();msg.textContent='正在驗證管理者…';try{
+ const username=$('adminUsername').value.trim(),remember=$('rememberLogin').checked;
+ const result=await api('adminLogin',{username,password:$('adminPassword').value,remember});
+ localStorage.setItem(USER_KEY,username);
+ forgetSession();const storage=remember?localStorage:sessionStorage;
+ storage.setItem(LOGIN_KEY,JSON.stringify({session:result.session,expiresAt:Date.now()+Number(result.expiresIn||21600)*1000,endpoint:endpoint()}));
+ window.CAD_ADMIN_SESSION=result.session;mode='admin';clearInterval(timer);closePreview();closeDetail();adminMode();$('adminPassword').value='';msg.textContent='';
+ }catch(err){msg.textContent='無法登入管理者：'+err.message+'。請確認 Apps Script 網址及部署設定。'}};
+ // 只記帳號與工作階段，不保存密碼；每次重新開站都先由伺服器驗證有效性。
+ $('adminUsername').value=localStorage.getItem(USER_KEY)||'';
+ async function restoreLogin(){const info=rememberedSession();if(!info?.session||info.expiresAt<=Date.now()||info.endpoint!==endpoint()){forgetSession();return}
+   try{const response=await api('adminCheck',{session:info.session});if(!response.ok)return;
+     window.CAD_ADMIN_SESSION=info.session;mode='admin';closePreview();closeDetail();adminMode();
+   }catch(e){forgetSession();window.CAD_ADMIN_SESSION='';}
+ }
+ restoreLogin();
+ $('switchAdmin').onclick=async()=>{await chooseRole();$('adminLoginForm').hidden=false;$('adminPassword').value='';msg.textContent='請登入管理者帳號';};
  $('employeeRefresh').onclick=()=>refresh(true);
  // 員工模式的互動僅限搜尋、圖面平移縮放與設備簡介；絕不向伺服器提交寫入請求。
  document.addEventListener('click',e=>{if(mode!=='employee')return;const t=e.target.closest('button,a,input,select,[draggable]');if(!t)return;
